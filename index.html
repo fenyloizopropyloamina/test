@@ -3,215 +3,347 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Audiofax</title>
+<title>Audiofax — kolor 256×192</title>
 <style>
-:root{--bg:#eceef3;--fg:#1c2030;--dim:#5d6478;--line:#c9cdd8;--acc:#2f5bd8;--panel:#f7f8fb;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2030;--fg:#e6e8f0;--dim:#9097ad;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1c2030;--fg:#e6e8f0;--dim:#9097ad;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Iowan Old Style","Palatino Linotype",Georgia,serif}
-main{max-width:560px;margin:0 auto;padding:28px 18px 48px}
-h1{font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
-p.lead{margin:0 0 26px;color:var(--dim)}
-section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:18px}
-h2{font-size:18px;margin:0 0 10px;font-weight:600}
-canvas{display:block;width:100%;aspect-ratio:4/3;background:#000;image-rendering:pixelated;border-radius:3px}
-.row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
-button,label.btn{font:inherit;background:var(--acc);color:var(--bg);border:0;border-radius:4px;padding:8px 14px;cursor:pointer}
-button.ghost,label.btn{background:transparent;color:var(--fg);border:1px solid var(--line)}
-button:disabled{opacity:.45;cursor:default}
+:root{--bg:#eceef3;--fg:#1c2030;--dim:#5d6478;--line:#c9cdd8;--acc:#2f5bd8;--panel:#f7f8fb;color-scheme:light;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2030;--fg:#e6e8f0;--dim:#a9b0c4;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:650px;margin:0 auto;padding:24px 16px 40px}h1{font-size:28px;margin:0 0 4px;letter-spacing:-.02em}p.lead{color:var(--dim);margin:0 0 22px}section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}h2{font-size:19px;margin:0 0 12px}
+canvas{display:block;width:100%;aspect-ratio:4/3;background:#090b10;border-radius:6px;image-rendering:pixelated}
+.row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button,label.btn{font:inherit;background:var(--acc);color:var(--bg);border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}button:disabled{opacity:.45;cursor:default}
 button:focus-visible,label.btn:focus-within{outline:2px solid var(--acc);outline-offset:2px}
 input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
-.st{font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--dim);min-height:1.4em;margin-top:10px}
-.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:12px}
-.bar i{display:block;height:100%;width:0;background:var(--acc)}
-#prev{width:128px;aspect-ratio:4/3}
-.hint{font-size:14px;color:var(--dim);margin:0}
+.st{font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--dim);min-height:1.4em;margin-top:10px}
+.bar{height:5px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;width:0;background:var(--acc)}
+#prev{width:160px;max-width:42%;aspect-ratio:4/3} .hint{font-size:14px;color:var(--dim);margin:0}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-top:14px}.controls label{display:block;font-size:14px;color:var(--dim)}
+.controls input{width:100%;accent-color:var(--acc)} .cap{font-size:13px;color:var(--dim);margin-top:8px}
+@media(max-width:420px){.controls{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main>
-<h1>Audiofax</h1>
-<p class="lead">Obraz zamieniony na dźwięk (analogowy OFDM), wysłany z głośnika i odebrany mikrofonem drugiego urządzenia.</p>
-
+<h1>Audiofax <span style="font-weight:400">— kolor 256×192</span></h1>
+<p class="lead">Kolorowy obraz przez dźwięk, bez Wi‑Fi i bez internetu. Analogowy OFDM z synchronizacją i pilotami.</p>
 <section>
 <h2>Odbiornik</h2>
 <canvas id="screen" width="256" height="192"></canvas>
-<div class="row"><button id="listen">Włącz nasłuch</button></div>
+<div class="row"><button id="listen">Włącz nasłuch</button><button id="save" class="ghost" disabled>Zapisz odebrany PNG</button></div>
 <div class="st" id="status">Nasłuch wyłączony</div>
 </section>
-
 <section>
 <h2>Nadajnik</h2>
 <div class="row" style="margin-top:0">
-<canvas id="prev" width="64" height="48"></canvas>
-<div>
+<canvas id="prev" width="256" height="192"></canvas>
 <label class="btn">Wybierz obraz<input type="file" id="file" accept="image/*"></label>
 </div>
+<div class="controls">
+<label>Wyostrzenie: <output id="sharpv">20%</output><input id="sharp" type="range" min="0" max="80" value="20" step="5"></label>
+<label>Nasycenie barw: <output id="satv">105%</output><input id="sat" type="range" min="0" max="160" value="105" step="5"></label>
 </div>
 <div class="row"><button id="send" disabled>Nadaj</button><span class="st" id="txst" style="margin:0"></span></div>
 <div class="bar"><i id="prog"></i></div>
+<p class="cap">Format: 256 × 192 piksele, kolor YCbCr 4:2:0 (4 próbki jasności + 2 chrominancji na blok 2 × 2). Czas transmisji ok. 20 s.</p>
 </section>
-
-<p class="hint">Ustaw głośność na ok. 70%, urządzenia 0,5–1 m od siebie, w ciszy. Test na jednym urządzeniu też działa: nasłuch usłyszy własny głośnik.</p>
+<p class="hint">Na obu urządzeniach otwórz tę samą wersję pliku. Mikrofon musi mieć wyłączone tłumienie szumu i redukcję echa. Ustaw głośność na ok. 60–70%, odległość 0,5–1 m; unikaj pogłosu. Przez mikrofon transmisja jest podatna na zakłócenia.</p>
 </main>
-
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-// ---- parametry: analogowy OFDM ----
+// OFDM: 48 kHz, 1024-punktowa FFT, prefiks 256, nośne ok. 797–3938 Hz.
 const FS=48000,N=1024,CP=256,SYM=N+CP,K0=17,K1=84,CH=4096,STRIDE=128;
-const C={W:160,H:120}, NPIX=C.W*C.H;
+const C={W:256,H:192},BW=C.W/2,BH=C.H/2,NPIX=C.W*C.H;
+const PACKETS=BW*BH, NV=PACKETS*6; // [Y00,Y10,Y01,Y11,Cb,Cr]
 const bins=[];for(let k=K0;k<=K1;k++)bins.push(k);
-const isP=k=>(k-K0)%4===0, pil=k=>((k*7+3)%5<2)?-1:1;
-const PB=bins.filter(isP), DB=bins.filter(k=>!isP(k)), PER=DB.length*2, NSYM=Math.ceil(NPIX/PER);
-const cl=x=>Math.max(0,Math.min(1,x));
+const isP=k=>(k-K0)%4===0,pil=k=>((k*7+3)%5<2)?-1:1;
+const PB=bins.filter(isP),DB=bins.filter(k=>!isP(k)),PER=DB.length*2;
+const NSYM=Math.ceil(NV/PER),WIN_EARLY=128; // FFT wewnątrz CP, zapas na dryf zegarów
+const clamp=x=>Math.max(0,Math.min(1,x));
+const u8=x=>Math.round(255*clamp(x));
 let actx=null;
-function ctx(){ if(!actx){ try{actx=new AudioContext({sampleRate:FS});}catch(e){actx=new (window.AudioContext||window.webkitAudioContext)();} } if(actx.state==="suspended")actx.resume(); return actx; }
-
+function ctx(){
+  if(!actx){try{actx=new AudioContext({sampleRate:FS});}
+  catch(e){actx=new (window.AudioContext||window.webkitAudioContext)();}}
+  if(actx.state==="suspended")actx.resume();return actx;
+}
 function fft(re,im,inv){
   const n=re.length;
-  for(let i=1,j=0;i<n;i++){ let b=n>>1; for(;j&b;b>>=1)j^=b; j^=b; if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t;} }
+  for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;
+    if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t;}}
   for(let len=2;len<=n;len<<=1){
     const a=(inv?2:-2)*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a),h=len>>1;
-    for(let i=0;i<n;i+=len){ let cr=1,ci=0;
-      for(let k=0;k<h;k++){ const u=i+k,v=u+h,tr=re[v]*cr-im[v]*ci,ti=re[v]*ci+im[v]*cr;
-        re[v]=re[u]-tr;im[v]=im[u]-ti;re[u]+=tr;im[u]+=ti; const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t; } } }
+    for(let i=0;i<n;i+=len){let cr=1,ci=0;
+      for(let k=0;k<h;k++){
+        const u=i+k,v=u+h,tr=re[v]*cr-im[v]*ci,ti=re[v]*ci+im[v]*cr;
+        re[v]=re[u]-tr;im[v]=im[u]-ti;re[u]+=tr;im[u]+=ti;
+        const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t;
+      }
+    }
+  }
   if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}
 }
-// chirp 800→4000 Hz z oknem Hanna: preambuła synchronizacji
 const chirp=new Float32Array(CH);
-for(let i=0;i<CH;i++){ const t=i/FS,T=CH/FS; chirp[i]=Math.sin(2*Math.PI*(800*t+3200*t*t/(2*T)))*(0.5-0.5*Math.cos(2*Math.PI*i/CH)); }
-
-// ---- ekran odbiornika ----
+for(let i=0;i<CH;i++){
+  const t=i/FS,T=CH/FS;
+  chirp[i]=Math.sin(2*Math.PI*(800*t+3200*t*t/(2*T)))*(0.5-0.5*Math.cos(2*Math.PI*i/CH));
+}
+// Znany obrót fazy wynikający z próbkowania FFT przed końcem prefiksu.
+const rotC=new Float64Array(K1+1),rotS=new Float64Array(K1+1);
+for(const k of bins){const a=2*Math.PI*k*WIN_EARLY/N;rotC[k]=Math.cos(a);rotS[k]=Math.sin(a);}
+// Odbiornik: próbki bloku 2x2 i biliniowa interpolacja chrominancji.
 const scr=$("screen"),sg=scr.getContext("2d");
 const small=document.createElement("canvas");small.width=C.W;small.height=C.H;
-const smg=small.getContext("2d"), vals=new Float32Array(NPIX), noise=sg.createImageData(scr.width,scr.height);
-let lines=0,receiving=false,showUntil=0;
+const smg=small.getContext("2d"),vals=new Float32Array(NV),rgb=smg.createImageData(C.W,C.H);
+const noise=sg.createImageData(scr.width,scr.height);
+let lines=0,receiving=false,showUntil=0,completed=false;
 function renderSmall(){
-  const m=lines*C.W; if(!m)return;
-  const s=Array.from(vals.subarray(0,m)).sort((a,b)=>a-b), lo=s[Math.floor(m*.02)], hi=s[Math.min(m-1,Math.floor(m*.98))], sp=Math.max(hi-lo,.05);
-  const im=smg.createImageData(C.W,C.H);
-  for(let i=0;i<m;i++){const g=cl((vals[i]-lo)/sp)*255;im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=g;im.data[i*4+3]=255;}
-  smg.putImageData(im,0,0);
+  const decodedRows=Math.min(BH,Math.floor(Math.floor(decodedCount/6)/BW));
+  const maxY=Math.min(C.H,decodedRows*2);
+  const d=rgb.data;
+  const crMaxRow=Math.max(0,decodedRows-1);
+  for(let y=0;y<maxY;y++){
+    const by=y>>1,fy=(y-.5)/2,cy0=Math.max(0,Math.min(crMaxRow,Math.floor(fy)));
+    const cy1=Math.max(0,Math.min(crMaxRow,cy0+1)),ty=Math.max(0,Math.min(1,fy-cy0));
+    for(let x=0;x<C.W;x++){
+      const bx=x>>1,b=by*BW+bx,p=b*6,i=(y*C.W+x)*4;
+      const Y=vals[p+((y&1)<<1)+(x&1)];
+      const fx=(x-.5)/2,cx0=Math.max(0,Math.min(BW-1,Math.floor(fx)));
+      const cx1=Math.min(BW-1,cx0+1),tx=Math.max(0,Math.min(1,fx-cx0));
+      const a=(cy0*BW+cx0)*6,c=(cy1*BW+cx0)*6;
+      const b1=(cy0*BW+cx1)*6,d1=(cy1*BW+cx1)*6;
+      const cb0=vals[a+4]*(1-tx)+vals[b1+4]*tx;
+      const cb1=vals[c+4]*(1-tx)+vals[d1+4]*tx;
+      const cr0=vals[a+5]*(1-tx)+vals[b1+5]*tx;
+      const cr1=vals[c+5]*(1-tx)+vals[d1+5]*tx;
+      const cb=cb0*(1-ty)+cb1*ty-.5,cr=cr0*(1-ty)+cr1*ty-.5;
+      d[i]=u8(Y+1.402*cr);
+      d[i+1]=u8(Y-.344136*cb-.714136*cr);
+      d[i+2]=u8(Y+1.772*cb);d[i+3]=255;
+    }
+  }
+  smg.putImageData(rgb,0,0);
+  lines=maxY;
 }
 function frame(){
-  const d=noise.data;
-  for(let i=0;i<d.length;i+=4){d[i]=d[i+1]=d[i+2]=(Math.random()*230)|0;d[i+3]=255;}
+  const dd=noise.data;
+  for(let i=0;i<dd.length;i+=4){const g=Math.random()*180|0;dd[i]=dd[i+1]=dd[i+2]=g;dd[i+3]=255;}
   sg.putImageData(noise,0,0);
   if(lines>0&&(receiving||performance.now()<showUntil)){
-    sg.imageSmoothingEnabled=false; const dh=lines*scr.height/C.H;
-    sg.drawImage(small,0,0,C.W,lines,0,0,scr.width,dh);
-    if(receiving){sg.fillStyle="rgba(255,255,255,.55)";sg.fillRect(0,dh,scr.width,2);}
-  } else if(lines>0)lines=0;
+    sg.imageSmoothingEnabled=false;
+    sg.drawImage(small,0,0,C.W,lines,0,0,C.W,lines);
+    if(receiving&&lines<C.H){sg.fillStyle="rgba(255,255,255,.65)";sg.fillRect(0,lines,C.W,2);}
+  }else if(lines>0){lines=0;}
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-
-// ---- odbiór: korelacja z chirpem + OFDM z equalizacją pilotową ----
+// Wykrywanie dwóch identycznych chirpów, dopasowanie początku i dekodowanie symboli.
+// 30 s wystarcza na przesyłkę (~19,3 s) z bezpiecznym zapasem.
 const buf=new Float32Array(FS*30);
-let n=0,d=0,st="IDLE",P0=0,sym=0,bm=0,bd=0,live=0,listening=false;
-function ncorr(d){let p=0,e1=0,e2=0;for(let i=0;i<CH;i++){const a=buf[d+i],b=buf[d+CH+i];p+=a*b;e1+=a*a;e2+=b*b;}
-  return e1<CH*1e-6?0:p/Math.sqrt(e1*e2);}
-function lock(c){ // dopasowanie do wzorca chirpa: dokładny początek (±STRIDE)
+let n=0,scanPos=0,st="IDLE",P0=0,sym=0,bm=0,bd=0,live=0,listening=false;
+let decodedCount=0;
+function ncorr(pos){
+  let p=0,e1=0,e2=0;
+  for(let i=0;i<CH;i++){
+    const a=buf[pos+i],b=buf[pos+CH+i];p+=a*b;e1+=a*a;e2+=b*b;
+  }
+  return e1<CH*1e-6?0:p/Math.sqrt(e1*e2);
+}
+function lock(c){
   let best=-1,bo=0,ew=0;
-  for(let o=c-STRIDE;o<=c+STRIDE;o++){ if(o<0)continue; let s=0,e=0;
-    for(let i=0;i<CH;i++){const a=buf[o+i]+buf[o+CH+i];s+=a*chirp[i];e+=a*a;}
-    if(s>best){best=s;bo=o;ew=e;} }
+  for(let o=c-STRIDE;o<=c+STRIDE;o++){
+    if(o<0||o+2*CH>n)continue;
+    let s=0,e=0;
+    for(let i=0;i<CH;i++){
+      const a=buf[o+i]+buf[o+CH+i];s+=a*chirp[i];e+=a*a;
+    }
+    if(s>best){best=s;bo=o;ew=e;}
+  }
   let ec=0;for(let i=0;i<CH;i++)ec+=chirp[i]*chirp[i];
-  if(best/Math.sqrt(ew*ec+1e-12)<.5)return false;
-  P0=bo+2*CH;sym=0;st="RX";receiving=true;lines=0;return true;
+  if(best/Math.sqrt(ew*ec+1e-12)<.50)return false;
+  P0=bo+2*CH;sym=0;decodedCount=0;vals.fill(.5);
+  st="RX";receiving=true;completed=false;lines=0;$("save").disabled=true;
+  return true;
 }
 function scan(){
-  for(;d+2*CH<=n;d+=STRIDE){
-    const m=ncorr(d);live=m;
-    if(m>.4&&m>bm){bm=m;bd=d;}
-    else if(bm>0&&m<bm*.7){ if(lock(bd))return; bm=0; }
+  for(;scanPos+2*CH<=n;scanPos+=STRIDE){
+    const m=ncorr(scanPos);live=m;
+    if(m>.4&&m>bm){bm=m;bd=scanPos;}
+    else if(bm>0&&m<bm*.7){if(lock(bd))return;bm=0;}
   }
-  if(n>FS*6){const keep=3*CH,sh=n-keep;buf.copyWithin(0,sh,n);n=keep;d=Math.max(0,d-sh);bd-=sh;if(bd<0)bm=0;}
+  if(n>FS*6){
+    const keep=3*CH,sh=n-keep;
+    buf.copyWithin(0,sh,n);n=keep;scanPos=Math.max(0,scanPos-sh);
+    bd-=sh;if(bd<0)bm=0;
+  }
 }
 const rr=new Float64Array(N),ri=new Float64Array(N);
+const hr=new Float64Array(PB.length),hi=new Float64Array(PB.length);
+const hm=new Float64Array(PB.length),hp=new Float64Array(PB.length);
 function decodeSym(s){
-  const o=P0+s*SYM+CP-24;
-  for(let i=0;i<N;i++){rr[i]=buf[o+i];ri[i]=0;} fft(rr,ri,false);
-  const hr=PB.map(k=>rr[k]*pil(k)),hi=PB.map(k=>ri[k]*pil(k));
-  DB.forEach((k,i)=>{
-    const j=Math.floor((k-K0)/4),j2=Math.min(j+1,PB.length-1),t=((k-K0)%4)/4;
-    const Hr=hr[j]*(1-t)+hr[j2]*t,Hi=hi[j]*(1-t)+hi[j2]*t,m=Hr*Hr+Hi*Hi+1e-12;
-    const zr=(rr[k]*Hr+ri[k]*Hi)/m,zi=(ri[k]*Hr-rr[k]*Hi)/m,p=s*PER+2*i;
-    if(p<NPIX)vals[p]=cl(zr/2+.5); if(p+1<NPIX)vals[p+1]=cl(zi/2+.5);
-  });
+  const o=P0+s*SYM+CP-WIN_EARLY;
+  for(let i=0;i<N;i++){rr[i]=buf[o+i];ri[i]=0;}
+  fft(rr,ri,false);
+  for(let j=0;j<PB.length;j++){
+    const k=PB[j],c=rotC[k],ss=rotS[k],sign=pil(k);
+    hr[j]=(rr[k]*c-ri[k]*ss)*sign;
+    hi[j]=(rr[k]*ss+ri[k]*c)*sign;
+    hm[j]=Math.hypot(hr[j],hi[j]);
+    let a=Math.atan2(hi[j],hr[j]);
+    if(j){while(a-hp[j-1]>Math.PI)a-=2*Math.PI;
+          while(a-hp[j-1]<-Math.PI)a+=2*Math.PI;}
+    hp[j]=a;
+  }
+  for(let i=0;i<DB.length;i++){
+    const k=DB[i],j=Math.min(PB.length-2,Math.floor((k-K0)/4));
+    const j2=j+1,t=(k-PB[j])/(PB[j2]-PB[j]);
+    // 82–84 to nośne za ostatnim pilotem (81): ekstrapoluj fazę,
+    // w przeciwnym razie dryf zegarów niszczy ostatnie trzy nośne.
+    const mag=Math.max(1e-8,hm[j]*(1-t)+hm[j2]*t);
+    const phase=hp[j]*(1-t)+hp[j2]*t;
+    const Hre=mag*Math.cos(phase),Him=mag*Math.sin(phase),den=mag*mag+1e-12;
+    const c=rotC[k],ss=rotS[k];
+    const Xre=rr[k]*c-ri[k]*ss,Xim=rr[k]*ss+ri[k]*c;
+    const zr=(Xre*Hre+Xim*Him)/den,zi=(Xim*Hre-Xre*Him)/den;
+    const p=s*PER+2*i;
+    if(p<NV)vals[p]=clamp(zr/2+.5);
+    if(p+1<NV)vals[p+1]=clamp(zi/2+.5);
+  }
 }
-function resetIdle(){st="IDLE";n=0;d=0;bm=0;sym=0;receiving=false;}
+function resetIdle(){st="IDLE";n=0;scanPos=0;bm=0;sym=0;receiving=false;}
 function rx(){
   while(sym<NSYM){
-    if(P0+sym*SYM+CP-24+N>n)return;
-    decodeSym(sym++); lines=Math.min(C.H,Math.floor(sym*PER/C.W)); if(sym%6===0)renderSmall();
+    const o=P0+sym*SYM+CP-WIN_EARLY;
+    if(o<0||o+N>n)return;
+    decodeSym(sym++);decodedCount=Math.min(NV,sym*PER);
+    if(sym%8===0)renderSmall();
   }
-  lines=C.H;renderSmall();showUntil=performance.now()+25000;resetIdle();
+  decodedCount=NV;renderSmall();completed=true;$("save").disabled=false;
+  showUntil=performance.now()+120000;resetIdle();$("status").textContent="Odebrano obraz kolorowy (256 × 192).";
 }
 async function startListen(){
   try{
     const a=ctx();
     const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
-    const src=a.createMediaStreamSource(stream),proc=a.createScriptProcessor(4096,1,1),mute=a.createGain();mute.gain.value=0;
+    const src=a.createMediaStreamSource(stream),proc=a.createScriptProcessor(4096,1,1);
+    const mute=a.createGain();mute.gain.value=0;
     proc.onaudioprocess=e=>{
       const x=e.inputBuffer.getChannelData(0);
       if(n+x.length>buf.length)resetIdle();
-      buf.set(x,n);n+=x.length; st==="IDLE"?scan():rx();
+      buf.set(x,n);n+=x.length;
+      if(st==="IDLE")scan();else rx();
     };
     src.connect(proc);proc.connect(mute);mute.connect(a.destination);
     listening=true;$("listen").disabled=true;$("listen").textContent="Nasłuch włączony";
-    if(a.sampleRate!==FS)$("status").textContent="Uwaga: przeglądarka nie dała 48 kHz ("+a.sampleRate+"), odbiór może zawieść.";
-  }catch(err){$("status").textContent="Brak dostępu do mikrofonu. Zezwól na mikrofon lub otwórz stronę przez https.";}
+    if(a.sampleRate!==FS)$("status").textContent="Uwaga: dźwięk nie ma 48 kHz ("+a.sampleRate+").";
+  }catch(err){$("status").textContent="Nie można włączyć mikrofonu. Sprawdź uprawnienia / HTTPS: "+err.message;}
 }
 $("listen").onclick=startListen;
-setInterval(()=>{ if(!listening)return;
-  if(actx.sampleRate!==FS&&st==="IDLE"&&!live)return;
-  $("status").textContent=st==="IDLE"?"Cisza, tylko szum | korelacja z preambułą "+live.toFixed(2):"Odbiór: "+Math.round(100*sym/NSYM)+"%";
-},200);
-
-// ---- nadawanie ----
-const pv=$("prev"),pg=pv.getContext("2d");pv.width=C.W;pv.height=C.H;
-let txVals=null,playing=null;
+$("save").onclick=()=>{
+  if(!completed)return;
+  const a=document.createElement("a");a.download="audiofax-odebrany-kolor.png";
+  a.href=small.toDataURL("image/png");a.click();
+};
+setInterval(()=>{
+  if(!listening||st==="IDLE"&&completed)return;
+  $("status").textContent=st==="IDLE"?
+    "Nasłuch — korelacja z preambułą: "+live.toFixed(2):
+    "Odbiór kolorowego obrazu: "+Math.round(100*sym/NSYM)+"%";
+},250);
+// Nadajnik: RGB -> YCbCr 4:2:0. Próbki Y w pełnej rozdzielczości, Cb/Cr co 2x2.
+const pv=$("prev"),pg=pv.getContext("2d");
+let sourceImg=null,txVals=null,playing=null;
+function buildPayload(){
+  if(!sourceImg)return;
+  const r=Math.max(C.W/sourceImg.width,C.H/sourceImg.height);
+  const w=sourceImg.width*r,h=sourceImg.height*r;
+  pg.clearRect(0,0,C.W,C.H);pg.imageSmoothingEnabled=true;pg.imageSmoothingQuality="high";
+  pg.drawImage(sourceImg,(C.W-w)/2,(C.H-h)/2,w,h);
+  const img=pg.getImageData(0,0,C.W,C.H),data=img.data;
+  const yIn=new Float32Array(NPIX),cbIn=new Float32Array(NPIX),crIn=new Float32Array(NPIX);
+  for(let i=0;i<NPIX;i++){
+    const R=data[i*4]/255,G=data[i*4+1]/255,B=data[i*4+2]/255;
+    const Y=.299*R+.587*G+.114*B;
+    yIn[i]=Y;cbIn[i]=.5+(B-Y)/1.772;crIn[i]=.5+(R-Y)/1.402;
+  }
+  const sharpen=Number($("sharp").value)/100,sat=Number($("sat").value)/100;
+  const yNew=new Float32Array(NPIX);
+  for(let yy=0;yy<C.H;yy++)for(let xx=0;xx<C.W;xx++){
+    const p=yy*C.W+xx,x0=Math.max(0,xx-1),x1=Math.min(C.W-1,xx+1);
+    const y0=Math.max(0,yy-1),y1=Math.min(C.H-1,yy+1);
+    // delikatny filtr unsharp: zachowanie krawędzi liter i drobnych obiektów
+    const avg=(4*yIn[p]+yIn[yy*C.W+x0]+yIn[yy*C.W+x1]+yIn[y0*C.W+xx]+yIn[y1*C.W+xx])/8;
+    yNew[p]=clamp(yIn[p]+sharpen*(yIn[p]-avg));
+  }
+  txVals=new Float32Array(NV);
+  for(let by=0;by<BH;by++)for(let bx=0;bx<BW;bx++){
+    const x=bx*2,y=by*2,p=y*C.W+x,ix=(by*BW+bx)*6;
+    const pp=[p,p+1,p+C.W,p+C.W+1];
+    let cb=0,cr=0;
+    for(let i=0;i<4;i++){
+      const q=pp[i];txVals[ix+i]=yNew[q];cb+=cbIn[q];cr+=crIn[q];
+      const cy=(cbIn[q]-.5)*sat,cv=(crIn[q]-.5)*sat,Y=yNew[q];
+      data[q*4]=u8(Y+1.402*cv);
+      data[q*4+1]=u8(Y-.344136*cy-.714136*cv);
+      data[q*4+2]=u8(Y+1.772*cy);data[q*4+3]=255;
+    }
+    txVals[ix+4]=clamp(.5+(cb/4-.5)*sat);
+    txVals[ix+5]=clamp(.5+(cr/4-.5)*sat);
+  }
+  pg.putImageData(img,0,0);$("send").disabled=false;
+  $("txst").textContent="Gotowy obraz 256 × 192";
+}
+$("sharp").oninput=()=>{$("sharpv").textContent=$("sharp").value+"%";buildPayload();};
+$("sat").oninput=()=>{$("satv").textContent=$("sat").value+"%";buildPayload();};
 $("file").onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const img=new Image();img.onload=()=>{
-    const r=Math.max(C.W/img.width,C.H/img.height),w=img.width*r,h=img.height*r;
-    pg.drawImage(img,(C.W-w)/2,(C.H-h)/2,w,h);
-    const im=pg.getImageData(0,0,C.W,C.H),g=new Float32Array(NPIX);
-    for(let i=0;i<NPIX;i++)g[i]=(.299*im.data[i*4]+.587*im.data[i*4+1]+.114*im.data[i*4+2])/255;
-    const s=Array.from(g).sort((a,b)=>a-b),lo=s[Math.floor(NPIX*.02)],sp=Math.max(s[Math.floor(NPIX*.98)]-lo,.05);
-    for(let i=0;i<NPIX;i++){g[i]=cl((g[i]-lo)/sp);im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=g[i]*255;im.data[i*4+3]=255;}
-    pg.putImageData(im,0,0);txVals=g;$("send").disabled=false;URL.revokeObjectURL(img.src);
-  };img.src=URL.createObjectURL(f);
+  const file=e.target.files[0];if(!file)return;
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{sourceImg=img;buildPayload();URL.revokeObjectURL(url);};
+  img.onerror=()=>{$("txst").textContent="Nie udało się wczytać obrazu.";URL.revokeObjectURL(url);};
+  img.src=url;
 };
 function synth(){
   const pay=new Float32Array(NSYM*SYM),re=new Float64Array(N),im=new Float64Array(N);
   for(let s=0;s<NSYM;s++){
     re.fill(0);im.fill(0);
     for(const k of PB){re[k]=pil(k);re[N-k]=pil(k);}
-    DB.forEach((k,i)=>{const p=s*PER+2*i,a=p<NPIX?(txVals[p]-.5)*2:0,b=p+1<NPIX?(txVals[p+1]-.5)*2:0;re[k]=a;im[k]=b;re[N-k]=a;im[N-k]=-b;});
+    DB.forEach((k,i)=>{
+      const p=s*PER+2*i,a=p<NV?(txVals[p]-.5)*2:0,b=p+1<NV?(txVals[p+1]-.5)*2:0;
+      re[k]=a;im[k]=b;re[N-k]=a;im[N-k]=-b;
+    });
     fft(re,im,true);
-    const o=s*SYM;for(let i=0;i<N;i++)pay[o+CP+i]=re[i];for(let i=0;i<CP;i++)pay[o+i]=re[N-CP+i];
+    const o=s*SYM;
+    for(let i=0;i<N;i++)pay[o+CP+i]=re[i];
+    for(let i=0;i<CP;i++)pay[o+i]=re[N-CP+i];
   }
-  let e=0;for(let i=0;i<pay.length;i++)e+=pay[i]*pay[i];
-  const lim=3.5*Math.sqrt(e/pay.length);let mx=0;
-  for(let i=0;i<pay.length;i++){pay[i]=Math.max(-lim,Math.min(lim,pay[i]));mx=Math.max(mx,Math.abs(pay[i]));}
-  const out=new Float32Array(Math.round(.3*FS)+2*CH+pay.length+Math.round(.3*FS)),o0=Math.round(.3*FS);
-  for(let i=0;i<CH;i++){out[o0+i]=chirp[i]*.9;out[o0+CH+i]=chirp[i]*.9;}
-  for(let i=0;i<pay.length;i++)out[o0+2*CH+i]=pay[i]/mx*.85;
+  // Bez twardego obcinania pików: clipping wprowadza błędy jasności i kolorów.
+  let peak=1e-8;for(let i=0;i<pay.length;i++)peak=Math.max(peak,Math.abs(pay[i]));
+  const out=new Float32Array(Math.round(.3*FS)+2*CH+pay.length+Math.round(.3*FS));
+  const o0=Math.round(.3*FS),gain=.80/peak;
+  for(let i=0;i<CH;i++){out[o0+i]=chirp[i]*.85;out[o0+CH+i]=chirp[i]*.85;}
+  for(let i=0;i<pay.length;i++)out[o0+2*CH+i]=pay[i]*gain;
   return out;
 }
 $("send").onclick=()=>{
   if(playing){playing.stop();return;}
-  const a=ctx(),data=synth(),ab=a.createBuffer(1,data.length,FS);ab.copyToChannel(data,0);
+  if(!txVals)return;
+  const a=ctx(),data=synth(),ab=a.createBuffer(1,data.length,FS);
+  ab.copyToChannel(data,0);
   const src=a.createBufferSource();src.buffer=ab;src.connect(a.destination);
   const t0=a.currentTime+.1,dur=ab.duration;src.start(t0);playing=src;
   $("send").textContent="Zatrzymaj";$("file").disabled=true;
-  const iv=setInterval(()=>{const f=cl((a.currentTime-t0)/dur);$("prog").style.width=(f*100)+"%";$("txst").textContent="Nadawanie: "+(f*dur).toFixed(1)+" / "+dur.toFixed(1)+" s";},100);
-  src.onended=()=>{clearInterval(iv);playing=null;$("send").textContent="Nadaj";$("file").disabled=false;$("prog").style.width="0";$("txst").textContent="Gotowe";};
+  $("sharp").disabled=true;$("sat").disabled=true;
+  const iv=setInterval(()=>{
+    const f=clamp((a.currentTime-t0)/dur);
+    $("prog").style.width=(f*100)+"%";
+    $("txst").textContent="Nadawanie "+(f*dur).toFixed(1)+" / "+dur.toFixed(1)+" s";
+  },100);
+  src.onended=()=>{
+    clearInterval(iv);playing=null;$("send").textContent="Nadaj";
+    $("file").disabled=false;$("sharp").disabled=false;$("sat").disabled=false;
+    $("prog").style.width="0";$("txst").textContent="Transmisja zakończona";
+  };
 };
 </script>
 </body>
