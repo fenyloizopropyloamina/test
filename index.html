@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Audiofax</title>
+<style>
+:root{--bg:#eceef3;--fg:#1c2030;--dim:#5d6478;--line:#c9cdd8;--acc:#2f5bd8;--panel:#f7f8fb;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2030;--fg:#e6e8f0;--dim:#9097ad;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c2030;--fg:#e6e8f0;--dim:#9097ad;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Iowan Old Style","Palatino Linotype",Georgia,serif}
+main{max-width:560px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+p.lead{margin:0 0 26px;color:var(--dim)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:18px}
+h2{font-size:18px;margin:0 0 10px;font-weight:600}
+canvas{display:block;width:100%;aspect-ratio:4/3;background:#000;image-rendering:pixelated;border-radius:3px}
+.row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button,label.btn{font:inherit;background:var(--acc);color:var(--bg);border:0;border-radius:4px;padding:8px 14px;cursor:pointer}
+button.ghost,label.btn{background:transparent;color:var(--fg);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,label.btn:focus-within{outline:2px solid var(--acc);outline-offset:2px}
+input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
+.st{font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--dim);min-height:1.4em;margin-top:10px}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;width:0;background:var(--acc)}
+#prev{width:128px;aspect-ratio:4/3}
+.hint{font-size:14px;color:var(--dim);margin:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Audiofax</h1>
+<p class="lead">Obraz zamieniony na dźwięk, wysłany z głośnika i odebrany mikrofonem drugiego urządzenia.</p>
+
+<section>
+<h2>Odbiornik</h2>
+<canvas id="screen" width="256" height="192"></canvas>
+<div class="row"><button id="listen">Włącz nasłuch</button></div>
+<div class="st" id="status">Nasłuch wyłączony</div>
+</section>
+
+<section>
+<h2>Nadajnik</h2>
+<div class="row" style="margin-top:0">
+<canvas id="prev" width="64" height="48"></canvas>
+<div>
+<label class="btn">Wybierz obraz<input type="file" id="file" accept="image/*"></label>
+</div>
+</div>
+<div class="row"><button id="send" disabled>Nadaj</button><span class="st" id="txst" style="margin:0"></span></div>
+<div class="bar"><i id="prog"></i></div>
+</section>
+
+<p class="hint">Ustaw głośność na ok. 70%, urządzenia 0,5–1 m od siebie, w ciszy. Test na jednym urządzeniu też działa: nasłuch usłyszy własny głośnik.</p>
+</main>
+
+<script>
+"use strict";
+// ---- parametry protokołu ----
+const C={W:64,H:48,P:0.010,LEAD:0.8,SYNC:0.03,F_LEAD:700,F_SYNC:1100,F0:1500,F1:3100,
+         WIN:0.006,HOP:0.002,TONAL:0.15,MINRMS:0.003};
+const $=id=>document.getElementById(id);
+let actx=null;
+function ctx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==="suspended") actx.resume(); return actx; }
+
+// ---- ekran odbiornika ----
+const scr=$("screen"), sg=scr.getContext("2d");
+const small=document.createElement("canvas"); small.width=C.W; small.height=C.H;
+const smg=small.getContext("2d");
+const vals=new Float32Array(C.W*C.H);
+let lines=0, receiving=false, showUntil=0;
+const noise=sg.createImageData(scr.width,scr.height);
+
+function renderSmall(){
+  const n=lines*C.W; if(!n) return;
+  const s=Array.from(vals.subarray(0,n)).sort((a,b)=>a-b);
+  const lo=s[Math.floor(n*0.02)], hi=s[Math.min(n-1,Math.floor(n*0.98))], span=Math.max(hi-lo,0.05);
+  const im=smg.createImageData(C.W,C.H);
+  for(let i=0;i<n;i++){ const g=Math.max(0,Math.min(255,((vals[i]-lo)/span)*255)); im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=g; im.data[i*4+3]=255; }
+  smg.putImageData(im,0,0);
+}
+function frame(){
+  const d=noise.data, amp=receiving?1:0.9;
+  for(let i=0;i<d.length;i+=4){ const g=(Math.random()*255*amp)|0; d[i]=d[i+1]=d[i+2]=g; d[i+3]=255; }
+  sg.putImageData(noise,0,0);
+  if(lines>0 && (receiving||performance.now()<showUntil)){
+    sg.imageSmoothingEnabled=false;
+    const sh=lines, dh=sh*(scr.height/C.H);
+    sg.drawImage(small,0,0,C.W,sh,0,0,scr.width,dh);
+    if(receiving){ sg.fillStyle="rgba(255,255,255,.55)"; sg.fillRect(0,dh,scr.width,2); }
+  } else if(lines>0){ lines=0; }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---- odbiór ----
+let sr=44100, Wn=0, HOP=0, buf=null, n=0, fi=0;
+let cosT=null, sinT=null, FB=[], mag=null;
+let st="IDLE", run=0, sa=-1, sb=-1, deadline=0, endS=0, need=0;
+let live={f:0,rms:0}, listening=false;
+
+function setupDSP(){
+  sr=actx.sampleRate; Wn=Math.round(C.WIN*sr); HOP=Math.round(C.HOP*sr);
+  FB=[]; for(let f=500;f<=3400;f+=50) FB.push(f);
+  cosT=new Float32Array(FB.length*Wn); sinT=new Float32Array(FB.length*Wn); mag=new Float32Array(FB.length);
+  for(let b=0;b<FB.length;b++){ const w=2*Math.PI*FB[b]/sr; for(let i=0;i<Wn;i++){ cosT[b*Wn+i]=Math.cos(w*i); sinT[b*Wn+i]=Math.sin(w*i); } }
+  buf=new Float32Array(Math.round(sr*90)); n=0; fi=0;
+}
+function analyze(s){
+  let e=0; for(let i=0;i<Wn;i++){ const x=buf[s+i]; e+=x*x; }
+  const rms=Math.sqrt(e/Wn);
+  if(rms<C.MINRMS) return {f:0,ok:false,rms,lvl:false};
+  let best=-1,bi=0,sum=0;
+  for(let b=0;b<FB.length;b++){
+    let c=0,q=0; const o=b*Wn;
+    for(let i=0;i<Wn;i++){ const x=buf[s+i]; c+=x*cosT[o+i]; q+=x*sinT[o+i]; }
+    const m=c*c+q*q; mag[b]=m; sum+=m; if(m>best){best=m;bi=b;}
+  }
+  let f=FB[bi];
+  if(bi>0&&bi<FB.length-1){
+    const a=Math.sqrt(mag[bi-1]),b=Math.sqrt(mag[bi]),c=Math.sqrt(mag[bi+1]), den=a-2*b+c;
+    if(den<0){ const d=0.5*(a-c)/den; f+=Math.max(-0.5,Math.min(0.5,d))*50; }
+  }
+  return {f,ok:best/sum>C.TONAL,rms,lvl:true};
+}
+function resetIdle(){ st="IDLE"; run=0; sa=sb=-1; n=0; fi=0; receiving=false; }
+function finish(){ showUntil=performance.now()+25000; receiving=false; renderSmall(); resetIdle(); }
+
+function decodeLine(){
+  const Ps=C.P*sr; let prev=0.5;
+  for(let k=0;k<C.W;k++){
+    const s=Math.round(endS+k*Ps+(Ps-Wn)/2);
+    const a=analyze(s);
+    let v=prev; if(a.lvl) v=Math.max(0,Math.min(1,(a.f-C.F0)/(C.F1-C.F0)));
+    vals[lines*C.W+k]=v; prev=v;
+  }
+  lines++; renderSmall();
+  if(lines>=C.H){ finish(); return; }
+  fi=Math.max(fi,Math.floor((need-Wn)/HOP)); st="SYNC"; sa=sb=-1; deadline=fi+250;
+}
+function handle(a,j){
+  if(a.lvl) live={f:a.f,rms:a.rms}; else live={f:0,rms:a.rms};
+  if(st==="IDLE"){
+    if(a.ok&&Math.abs(a.f-C.F_LEAD)<90){ if(++run>=120){ st="LEAD"; deadline=j+600; lines=0; receiving=true; } } else run=0;
+    return;
+  }
+  const isSync=a.ok&&Math.abs(a.f-C.F_SYNC)<100;
+  if(st==="LEAD"&&a.ok&&Math.abs(a.f-C.F_LEAD)<90) deadline=j+600;
+  if(isSync){ if(sa<0) sa=j; sb=j; return; }
+  if(sa>=0){
+    if(sb-sa+1>=8){
+      const center=((sa*HOP+Wn/2)+(sb*HOP+Wn/2))/2;
+      endS=center+C.SYNC*sr/2; need=Math.ceil(endS+C.W*C.P*sr)+Wn; st="LINE";
+    }
+    sa=sb=-1; return;
+  }
+  if(j>deadline){ if(lines>0) finish(); else resetIdle(); }
+}
+function process(){
+  if(st==="IDLE"&&n>sr*8){ const keep=Math.round(sr*0.6); buf.copyWithin(0,n-keep,n); n=keep; fi=0; run=0; }
+  for(;;){
+    if(st==="LINE"){ if(n<need) return; decodeLine(); continue; }
+    const s=fi*HOP; if(s+Wn>n) return;
+    const a=analyze(s); const j=fi++; handle(a,j);
+  }
+}
+async function startListen(){
+  try{
+    const a=ctx(); if(!buf) setupDSP();
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+    const src=a.createMediaStreamSource(stream);
+    const proc=a.createScriptProcessor(2048,1,1);
+    const mute=a.createGain(); mute.gain.value=0;
+    proc.onaudioprocess=e=>{
+      const x=e.inputBuffer.getChannelData(0);
+      if(n+x.length>buf.length) resetIdle();
+      buf.set(x,n); n+=x.length; process();
+    };
+    src.connect(proc); proc.connect(mute); mute.connect(a.destination);
+    listening=true; $("listen").disabled=true; $("listen").textContent="Nasłuch włączony";
+  }catch(err){ $("status").textContent="Brak dostępu do mikrofonu. Zezwól na mikrofon lub otwórz stronę przez https."; }
+}
+$("listen").onclick=startListen;
+setInterval(()=>{
+  if(!listening) return;
+  const m={IDLE:"Cisza, tylko szum",LEAD:"Wykryto sygnał, synchronizacja",SYNC:"Odbiór: linia "+lines+"/"+C.H,LINE:"Odbiór: linia "+lines+"/"+C.H}[st];
+  $("status").textContent=m+" | "+(live.f?Math.round(live.f)+" Hz":"-- Hz")+" | poziom "+live.rms.toFixed(3);
+},200);
+
+// ---- nadawanie ----
+const pv=$("prev"), pg=pv.getContext("2d");
+let txVals=null, playing=null;
+$("file").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const img=new Image(); img.onload=()=>{
+    const r=Math.max(C.W/img.width,C.H/img.height), w=img.width*r, h=img.height*r;
+    pg.drawImage(img,(C.W-w)/2,(C.H-h)/2,w,h);
+    const d=pg.getImageData(0,0,C.W,C.H), g=new Float32Array(C.W*C.H);
+    for(let i=0;i<g.length;i++) g[i]=(0.299*d.data[i*4]+0.587*d.data[i*4+1]+0.114*d.data[i*4+2])/255;
+    const s=Array.from(g).sort((a,b)=>a-b), lo=s[Math.floor(g.length*0.02)], hi=s[Math.floor(g.length*0.98)], span=Math.max(hi-lo,0.05);
+    for(let i=0;i<g.length;i++){ g[i]=Math.max(0,Math.min(1,(g[i]-lo)/span)); const v=g[i]*255; d.data[i*4]=d.data[i*4+1]=d.data[i*4+2]=v; d.data[i*4+3]=255; }
+    pg.putImageData(d,0,0); txVals=g; $("send").disabled=false; URL.revokeObjectURL(img.src);
+  }; img.src=URL.createObjectURL(f);
+};
+function synth(){
+  const a=ctx(), fs=a.sampleRate, seg=(d)=>Math.round(d*fs);
+  const total=seg(C.LEAD)+C.H*(seg(C.SYNC)+C.W*seg(C.P))+seg(0.3);
+  const out=new Float32Array(total); let p=0, ph=0;
+  const tone=(f,m)=>{ const w=2*Math.PI*f/fs; for(let i=0;i<m;i++){ ph=(ph+w)%(2*Math.PI); out[p++]=0.8*Math.sin(ph); } };
+  tone(C.F_LEAD,seg(C.LEAD));
+  for(let y=0;y<C.H;y++){
+    tone(C.F_SYNC,seg(C.SYNC));
+    for(let x=0;x<C.W;x++) tone(C.F0+txVals[y*C.W+x]*(C.F1-C.F0),seg(C.P));
+  }
+  for(let i=0;i<400;i++){ out[i]*=i/400; }
+  return out;
+}
+$("send").onclick=()=>{
+  if(playing){ playing.stop(); return; }
+  const a=ctx(), data=synth(), ab=a.createBuffer(1,data.length,a.sampleRate);
+  ab.copyToChannel(data,0);
+  const src=a.createBufferSource(); src.buffer=ab; src.connect(a.destination);
+  const t0=a.currentTime+0.1, dur=ab.duration; src.start(t0); playing=src;
+  $("send").textContent="Zatrzymaj"; $("file").disabled=true;
+  const iv=setInterval(()=>{
+    const f=Math.max(0,Math.min(1,(a.currentTime-t0)/dur));
+    $("prog").style.width=(f*100)+"%"; $("txst").textContent="Nadawanie: "+Math.round(f*dur)+" / "+Math.round(dur)+" s";
+  },150);
+  src.onended=()=>{ clearInterval(iv); playing=null; $("send").textContent="Nadaj"; $("file").disabled=false; $("prog").style.width="0"; $("txst").textContent="Gotowe"; };
+};
+</script>
+</body>
+</html>
