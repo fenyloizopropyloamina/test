@@ -1,419 +1,308 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Audiofax — kolor 256×192 — synchronizacja v2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>Audiofax · SSTV Robot 36</title>
 <style>
-:root{--bg:#eceef3;--fg:#1c2030;--dim:#5d6478;--line:#c9cdd8;--acc:#2f5bd8;--panel:#f7f8fb;color-scheme:light;box-sizing:border-box}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2030;--fg:#e6e8f0;--dim:#a9b0c4;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
-main{max-width:650px;margin:0 auto;padding:24px 16px 40px}h1{font-size:28px;margin:0 0 4px;letter-spacing:-.02em}p.lead{color:var(--dim);margin:0 0 22px}section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}h2{font-size:19px;margin:0 0 12px}
-canvas{display:block;width:100%;aspect-ratio:4/3;background:#090b10;border-radius:6px;image-rendering:pixelated}
-.row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
-button,label.btn{font:inherit;background:var(--acc);color:var(--bg);border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
-button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}button:disabled{opacity:.45;cursor:default}
-button:focus-visible,label.btn:focus-within{outline:2px solid var(--acc);outline-offset:2px}
-input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
-.st{font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--dim);min-height:1.4em;margin-top:10px}
-.bar{height:5px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;width:0;background:var(--acc)}
-#prev{width:160px;max-width:42%;aspect-ratio:4/3} .hint{font-size:14px;color:var(--dim);margin:0}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-top:14px}.controls label{display:block;font-size:14px;color:var(--dim)}
-.controls input{width:100%;accent-color:var(--acc)} .cap{font-size:13px;color:var(--dim);margin-top:8px}
-@media(max-width:420px){.controls{grid-template-columns:1fr}}
+:root{color-scheme:dark;--bg:#0b1220;--panel:#151e2d;--panel2:#202c3d;--line:#354357;--txt:#eff5fc;--muted:#a1b2c6;--blue:#60a5fa;--green:#4adeb0;--red:#f6acac}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -25%,#243758 0%,var(--bg) 53%);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--txt)}main{max-width:1060px;margin:auto;padding:32px 16px 48px}
+header{margin-bottom:24px}h1{font-size:clamp(27px,4vw,39px);margin:0 0 6px;letter-spacing:-.045em}h2{font-size:19px;margin:0 0 13px}p{line-height:1.6;margin:0 0 12px}.sub,.hint{color:var(--muted)}.sub{margin-bottom:0}.chip{font-size:12px;color:var(--green);background:#17372f;border:1px solid #336953;display:inline-block;padding:4px 9px;border-radius:99px;margin-bottom:10px;letter-spacing:.07em;font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;min-width:0;box-shadow:0 14px 34px #0002}canvas{display:block;width:100%;aspect-ratio:4/3;background:#070d14;border:1px solid #334154;border-radius:8px;object-fit:contain}#preview{image-rendering:auto}#received{image-rendering:auto}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:15px 0 7px}.btn,button{background:#397ce9;border:1px solid #4589fa;color:white;border-radius:8px;padding:10px 13px;font:600 14px system-ui;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-align:center;min-height:42px}button.secondary,.btn.secondary{background:var(--panel2);border-color:#476078}button:hover:not(:disabled),.btn:hover{filter:brightness(1.1)}button:disabled{opacity:.38;cursor:not-allowed}.btn input{display:none}label:not(.btn){font-size:13px;color:var(--muted)}input[type=range]{width:130px;accent-color:var(--blue)}input[type=checkbox]{accent-color:var(--blue)}.status{margin:12px 0 5px;min-height:48px;padding:10px 12px;background:#0e1724;border:1px solid #28384d;border-radius:8px;color:#baccdf;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap}.progress{background:#314155;height:6px;overflow:hidden;border-radius:20px;margin-top:12px}.progress i{display:block;width:0;height:100%;background:var(--green);transition:width .18s}.muted{color:var(--muted);font-size:13px}.note{background:#111d2b;border:1px solid #2e4158;padding:13px 15px;border-radius:10px;margin-top:18px}.statrow{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:12px}.stat{font:12px ui-monospace,monospace;color:#a8bfdc}.features{margin-top:20px}.features h2{margin-bottom:8px}.features p{color:var(--muted);font-size:14px}.hint{margin-top:7px;font-size:12px}small{font-size:12px}@media(max-width:740px){.grid{grid-template-columns:1fr}main{padding-top:20px}.card{padding:16px}}
 </style>
 </head>
-<body>
-<main>
-<h1>Audiofax <span style="font-weight:400">— kolor 256×192 SYNC</span></h1>
-<p class="lead">Kolorowy obraz przez dźwięk, bez Wi‑Fi i bez internetu. Analogowy OFDM z ciągłą korekcją dryfu zegarów audio.</p>
-<section>
-<h2>Odbiornik</h2>
-<canvas id="screen" width="256" height="192"></canvas>
-<div class="row"><button id="listen">Włącz nasłuch</button><button id="save" class="ghost" disabled>Zapisz odebrany PNG</button></div>
-<div class="st" id="status">Nasłuch wyłączony</div>
-<div class="st" id="syncinfo">Synchronizacja: oczekiwanie</div>
-</section>
-<section>
-<h2>Nadajnik</h2>
-<div class="row" style="margin-top:0">
-<canvas id="prev" width="256" height="192"></canvas>
-<label class="btn">Wybierz obraz<input type="file" id="file" accept="image/*"></label>
+<body><main>
+<header><div class="chip">ANALOGOWE SSTV · VIS 8</div><h1>Audiofax <span style="color:var(--blue)">Robot 36</span></h1><p class="sub">Kolorowe zdjęcie przesyłane dźwiękiem · standard SSTV · 320 × 240 · 36 sekund obrazu + nagłówek</p></header>
+<div class="grid">
+<section class="card"><h2>📡 Nadajnik</h2><canvas id="preview" width="320" height="240" aria-label="Podgląd zdjęcia do transmisji"></canvas>
+<div class="row"><label class="btn" for="pickImage">Wybierz zdjęcie<input type="file" id="pickImage" accept="image/*"></label><button id="send" disabled>Nadaj przez głośnik</button><button class="secondary" id="stopSend" disabled>Zatrzymaj</button></div>
+<div class="row"><button class="secondary" id="saveWav" disabled>↓ Zapisz sygnał WAV</button><button class="secondary" id="testLoop" disabled>Test bez mikrofonu</button></div>
+<div class="statrow"><label for="volume">Głośność nadajnika</label><div class="row" style="margin:0"><input type="range" id="volume" min="5" max="100" value="65"><span class="stat" id="volTxt">65%</span></div></div>
+<div class="progress"><i id="sendProgress"></i></div><div class="status" id="txStatus">Wybierz fotografię, aby rozpocząć.</div>
+<p class="hint">Wysyła standardowy Robot 36: 1900/1200 Hz VIS + linie Y / R−Y / B−Y. Działa także z innymi dekoderami SSTV.</p></section>
+<section class="card"><h2>📺 Odbiornik</h2><canvas id="received" width="320" height="240" aria-label="Odebrany kolorowy obraz SSTV"></canvas>
+<div class="row"><button id="listen">Włącz mikrofon</button><button class="secondary" id="stopListen" disabled>Wyłącz mikrofon</button><button class="secondary" id="savePng" disabled>↓ Zapisz PNG</button></div>
+<div class="row"><label class="btn secondary" for="pickWav">Odbierz z pliku WAV<input type="file" id="pickWav" accept=".wav,audio/wav,audio/x-wav"></label><button id="abortDecode" class="secondary" disabled>Przerwij dekodowanie</button></div>
+<div class="progress"><i id="recvProgress"></i></div><div class="status" id="rxStatus">Odbiornik wyłączony. Włącz mikrofon PRZED nadawaniem (lub otwórz plik WAV).</div>
+<div class="statrow"><div class="stat" id="freqTxt">Ton: — Hz</div><div class="stat" id="syncTxt">Synchronizacja: —</div></div>
+<p class="hint">Automatyczne wykrywanie początku transmisji VIS 8 i ponowna synchronizacja każdej linii. Dekoder tej wersji obsługuje tylko Robot 36.</p></section>
 </div>
-<div class="controls">
-<label>Wyostrzenie: <output id="sharpv">20%</output><input id="sharp" type="range" min="0" max="80" value="20" step="5"></label>
-<label>Nasycenie barw: <output id="satv">105%</output><input id="sat" type="range" min="0" max="160" value="105" step="5"></label>
-</div>
-<div class="row"><button id="send" disabled>Nadaj</button><span class="st" id="txst" style="margin:0"></span></div>
-<div class="bar"><i id="prog"></i></div>
-<p class="cap">Format: 256 × 192 piksele, kolor YCbCr 4:2:0 (4 próbki jasności + 2 chrominancji na blok 2 × 2). Czas transmisji ok. 20 s.</p>
-</section>
-<p class="hint">Na odbiorniku koniecznie użyj wersji SYNC; nadajnik może pozostać ze starszej wersji kolorowej. Mikrofon musi mieć wyłączone tłumienie szumu i redukcję echa. Ustaw głośność na ok. 60–70%, odległość 0,5–1 m; unikaj pogłosu. Przez mikrofon transmisja jest podatna na zakłócenia.</p>
-</main>
-<script>
-"use strict";
+<section class="note features"><h2>Jak przetestować?</h2><p>Na drugim telefonie/komputerze otwórz ten sam plik HTML, kliknij <strong>Włącz mikrofon</strong>, a dopiero potem nadaj zdjęcie. Ustaw urządzenia 0,5–1 m od siebie, głośność ok. 50–70%, wyłącz ulepszacze i tłumienie hałasu. Możesz też wybrać zdjęcie i kliknąć <strong>Test bez mikrofonu</strong>, aby sprawdzić kodek cyfrowo; albo pobrać WAV i odtworzyć go innym dekoderem SSTV.</p><p class="hint">Mikrofon wymaga zgody przeglądarki i bezpiecznego kontekstu (HTTPS, localhost lub zwykle plik lokalny). Test WAV oraz synteza sygnału nie potrzebują dostępu do internetu.</p></section>
+</main><script>
+'use strict';
 const $=id=>document.getElementById(id);
-// OFDM: 48 kHz, 1024-punktowa FFT, prefiks 256, nośne ok. 797–3938 Hz.
-const FS=48000,N=1024,CP=256,SYM=N+CP,K0=17,K1=84,CH=4096,STRIDE=128;
-const C={W:256,H:192},BW=C.W/2,BH=C.H/2,NPIX=C.W*C.H;
-const PACKETS=BW*BH, NV=PACKETS*6; // [Y00,Y10,Y01,Y11,Cb,Cr]
-const bins=[];for(let k=K0;k<=K1;k++)bins.push(k);
-const isP=k=>(k-K0)%4===0,pil=k=>((k*7+3)%5<2)?-1:1;
-const PB=bins.filter(isP),DB=bins.filter(k=>!isP(k)),PER=DB.length*2;
-const NSYM=Math.ceil(NV/PER),WIN_EARLY=128; // FFT wewnątrz CP, zapas na dryf zegarów
-const clamp=x=>Math.max(0,Math.min(1,x));
-const u8=x=>Math.round(255*clamp(x));
-let actx=null;
-function ctx(){
-  if(!actx){try{actx=new AudioContext({sampleRate:FS});}
-  catch(e){actx=new (window.AudioContext||window.webkitAudioContext)();}}
-  if(actx.state==="suspended")actx.resume();return actx;
-}
-function fft(re,im,inv){
-  const n=re.length;
-  for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;
-    if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t;}}
-  for(let len=2;len<=n;len<<=1){
-    const a=(inv?2:-2)*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a),h=len>>1;
-    for(let i=0;i<n;i+=len){let cr=1,ci=0;
-      for(let k=0;k<h;k++){
-        const u=i+k,v=u+h,tr=re[v]*cr-im[v]*ci,ti=re[v]*ci+im[v]*cr;
-        re[v]=re[u]-tr;im[v]=im[u]-ti;re[u]+=tr;im[u]+=ti;
-        const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t;
-      }
+const W=320,H=240,PAIR=W/2,FS_DEFAULT=48000,TWO_PI=2*Math.PI,LINE_SEC=.150,VIS=8;
+const clamp=(v,a=0,b=255)=>Math.max(a,Math.min(b,v));
+const nowMsg=(id,text)=>$(id).textContent=text;
+let audioCtx=null,micStream=null,micSource=null,micNode=null,silenceNode=null,txSource=null,txGain=null,txTimer=0,rxDecoder=null,abortJob=false,liveListening=false,rxLastFrame=false;
+const txCanvas=$('preview'),txg=txCanvas.getContext('2d',{willReadFrequently:true}),rxCanvas=$('received'),rxg=rxCanvas.getContext('2d');
+let sourceImage=null, encodedChannels=null;
+txg.fillStyle='#101a28';txg.fillRect(0,0,W,H);txg.fillStyle='#a8bad0';txg.textAlign='center';txg.font='18px system-ui';txg.fillText('Wybierz zdjęcie',W/2,H/2);rxg.fillStyle='#080f18';rxg.fillRect(0,0,W,H);
+
+function rgbaToChannels(data){
+  const yy=new Float32Array(W*H),rr=new Float32Array(PAIR*(H/2)),bb=new Float32Array(PAIR*(H/2));
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const k=(y*W+x)*4,r=data[k],g=data[k+1],b=data[k+2];
+    yy[y*W+x]=clamp(16+(65.738*r+129.057*g+25.064*b)/256);
+  }
+  for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2){
+    let r=0,g=0,b=0;
+    for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){
+      const k=((y+dy)*W+x+dx)*4;r+=data[k];g+=data[k+1];b+=data[k+2];
     }
+    r/=4;g/=4;b/=4;const k=(y/2)*PAIR+(x/2);
+    rr[k]=clamp(128+(112.439*r-94.154*g-18.285*b)/256);
+    bb[k]=clamp(128+(-37.945*r-74.494*g+112.439*b)/256);
   }
-  if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}
+  return {y:yy,cr:rr,cb:bb};
 }
-const chirp=new Float32Array(CH);
-for(let i=0;i<CH;i++){
-  const t=i/FS,T=CH/FS;
-  chirp[i]=Math.sin(2*Math.PI*(800*t+3200*t*t/(2*T)))*(0.5-0.5*Math.cos(2*Math.PI*i/CH));
-}
-// Znany obrót fazy wynikający z próbkowania FFT przed końcem prefiksu.
-const rotC=new Float64Array(K1+1),rotS=new Float64Array(K1+1);
-for(const k of bins){const a=2*Math.PI*k*WIN_EARLY/N;rotC[k]=Math.cos(a);rotS[k]=Math.sin(a);}
-// Odbiornik: próbki bloku 2x2 i biliniowa interpolacja chrominancji.
-const scr=$("screen"),sg=scr.getContext("2d");
-const small=document.createElement("canvas");small.width=C.W;small.height=C.H;
-const smg=small.getContext("2d"),vals=new Float32Array(NV),rgb=smg.createImageData(C.W,C.H);
-const noise=sg.createImageData(scr.width,scr.height);
-let lines=0,receiving=false,showUntil=0,completed=false;
-function renderSmall(){
-  const decodedRows=Math.min(BH,Math.floor(Math.floor(decodedCount/6)/BW));
-  const maxY=Math.min(C.H,decodedRows*2);
-  const d=rgb.data;
-  const crMaxRow=Math.max(0,decodedRows-1);
-  for(let y=0;y<maxY;y++){
-    const by=y>>1,fy=(y-.5)/2,cy0=Math.max(0,Math.min(crMaxRow,Math.floor(fy)));
-    const cy1=Math.max(0,Math.min(crMaxRow,cy0+1)),ty=Math.max(0,Math.min(1,fy-cy0));
-    for(let x=0;x<C.W;x++){
-      const bx=x>>1,b=by*BW+bx,p=b*6,i=(y*C.W+x)*4;
-      const Y=vals[p+((y&1)<<1)+(x&1)];
-      const fx=(x-.5)/2,cx0=Math.max(0,Math.min(BW-1,Math.floor(fx)));
-      const cx1=Math.min(BW-1,cx0+1),tx=Math.max(0,Math.min(1,fx-cx0));
-      const a=(cy0*BW+cx0)*6,c=(cy1*BW+cx0)*6;
-      const b1=(cy0*BW+cx1)*6,d1=(cy1*BW+cx1)*6;
-      const cb0=vals[a+4]*(1-tx)+vals[b1+4]*tx;
-      const cb1=vals[c+4]*(1-tx)+vals[d1+4]*tx;
-      const cr0=vals[a+5]*(1-tx)+vals[b1+5]*tx;
-      const cr1=vals[c+5]*(1-tx)+vals[d1+5]*tx;
-      const cb=cb0*(1-ty)+cb1*ty-.5,cr=cr0*(1-ty)+cr1*ty-.5;
-      d[i]=u8(Y+1.402*cr);
-      d[i+1]=u8(Y-.344136*cb-.714136*cr);
-      d[i+2]=u8(Y+1.772*cb);d[i+3]=255;
+
+function makeRobot36(ch,fs=FS_DEFAULT){
+  const sampleLength=Math.round((.91+H*LINE_SEC+.12)*fs),buf=new Float32Array(sampleLength);
+  let at=0,phase=0,sec=0;
+  // Każdy koniec segmentu jest zaokrąglany od czasu absolutnego, co zapobiega dryfowi.
+  function segment(duration, fn){
+    const a=at;sec+=duration;const end=Math.round(sec*fs),count=end-a;
+    for(let i=0;i<count;i++){
+      const f=fn(i,count);phase+=TWO_PI*f/fs;
+      if(phase>TWO_PI)phase-=TWO_PI;
+      buf[a+i]=.82*Math.sin(phase);
     }
+    at=end;
   }
-  smg.putImageData(rgb,0,0);
-  lines=maxY;
-}
-function frame(){
-  const dd=noise.data;
-  for(let i=0;i<dd.length;i+=4){const g=Math.random()*180|0;dd[i]=dd[i+1]=dd[i+2]=g;dd[i+3]=255;}
-  sg.putImageData(noise,0,0);
-  if(lines>0&&(receiving||performance.now()<showUntil)){
-    sg.imageSmoothingEnabled=false;
-    sg.drawImage(small,0,0,C.W,lines,0,0,C.W,lines);
-    if(receiving&&lines<C.H){sg.fillStyle="rgba(255,255,255,.65)";sg.fillRect(0,lines,C.W,2);}
-  }else if(lines>0){lines=0;}
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-// Wykrywanie dwóch identycznych chirpów, dopasowanie początku i dekodowanie symboli.
-// 60 s bufora obsługuje także wolniejsze urządzenia i dryf zegarów.
-const buf=new Float32Array(FS*60);
-let n=0,scanPos=0,st="IDLE",P0=0,sym=0,bm=0,bd=0,live=0,listening=false;
-let decodedCount=0;
-// Tracking error of sampling clocks: reference channel response is from symbol 0.
-// A fixed FFT start over ~20s can drift outside the cyclic prefix even at ~200ppm.
-let timingAdjust=0, timingResidual=0, pilotQuality=0, lastCorrection=0;
-const refPr=new Float64Array(PB.length),refPi=new Float64Array(PB.length);
-let pilotReferenceReady=false;
-function ncorr(pos){
-  let p=0,e1=0,e2=0;
-  for(let i=0;i<CH;i++){
-    const a=buf[pos+i],b=buf[pos+CH+i];p+=a*b;e1+=a*a;e2+=b*b;
-  }
-  return e1<CH*1e-6?0:p/Math.sqrt(e1*e2);
-}
-function lock(c){
-  let best=-1,bo=0,ew=0;
-  for(let o=c-STRIDE;o<=c+STRIDE;o++){
-    if(o<0||o+2*CH>n)continue;
-    let s=0,e=0;
-    for(let i=0;i<CH;i++){
-      const a=buf[o+i]+buf[o+CH+i];s+=a*chirp[i];e+=a*a;
-    }
-    if(s>best){best=s;bo=o;ew=e;}
-  }
-  let ec=0;for(let i=0;i<CH;i++)ec+=chirp[i]*chirp[i];
-  if(best/Math.sqrt(ew*ec+1e-12)<.50)return false;
-  P0=bo+2*CH;sym=0;decodedCount=0;vals.fill(.5);
-  timingAdjust=0;timingResidual=0;pilotQuality=0;lastCorrection=0;
-  pilotReferenceReady=false;
-  st="RX";receiving=true;completed=false;lines=0;$("save").disabled=true;
-  return true;
-}
-function scan(){
-  for(;scanPos+2*CH<=n;scanPos+=STRIDE){
-    const m=ncorr(scanPos);live=m;
-    if(m>.4&&m>bm){bm=m;bd=scanPos;}
-    else if(bm>0&&m<bm*.7){if(lock(bd))return;bm=0;}
-  }
-  if(n>FS*6){
-    const keep=3*CH,sh=n-keep;
-    buf.copyWithin(0,sh,n);n=keep;scanPos=Math.max(0,scanPos-sh);
-    bd-=sh;if(bd<0)bm=0;
-  }
-}
-const rr=new Float64Array(N),ri=new Float64Array(N);
-const hr=new Float64Array(PB.length),hi=new Float64Array(PB.length);
-const hm=new Float64Array(PB.length),hp=new Float64Array(PB.length);
-function decodeSym(s){
-  const o=P0+s*SYM+CP-WIN_EARLY+Math.round(timingAdjust);
-  for(let i=0;i<N;i++){rr[i]=buf[o+i];ri[i]=0;}
-  fft(rr,ri,false);
-  for(let j=0;j<PB.length;j++){
-    const k=PB[j],c=rotC[k],ss=rotS[k],sign=pil(k);
-    hr[j]=(rr[k]*c-ri[k]*ss)*sign;
-    hi[j]=(rr[k]*ss+ri[k]*c)*sign;
-    hm[j]=Math.hypot(hr[j],hi[j]);
-    let a=Math.atan2(hi[j],hr[j]);
-    if(j){while(a-hp[j-1]>Math.PI)a-=2*Math.PI;
-          while(a-hp[j-1]<-Math.PI)a+=2*Math.PI;}
-    hp[j]=a;
-  }
-  // Estimate the *residual* timing error from channel-invariant differential pilots.
-  // For each pilot, H_current * conj(H_first) removes static room/speaker response.
-  // Adjacent differences then remove common phase/CFO, leaving a phase slope
-  // proportional to the difference in FFT-window start (samples).
-  if(!pilotReferenceReady){
-    for(let j=0;j<PB.length;j++){refPr[j]=hr[j];refPi[j]=hi[j];}
-    pilotReferenceReady=true;
-  } else {
-    const qR=new Float64Array(PB.length),qI=new Float64Array(PB.length);
-    const qMag=new Float64Array(PB.length);
-    for(let j=0;j<PB.length;j++){
-      const r=hr[j]*refPr[j]+hi[j]*refPi[j];
-      const im=hi[j]*refPr[j]-hr[j]*refPi[j];
-      const m=Math.hypot(r,im);
-      if(m>1e-10){qR[j]=r/m;qI[j]=im/m;qMag[j]=m;}
-    }
-    function slopeAtGap(gap){
-      let ar=0,ai=0,w=0;
-      for(let j=0;j+gap<PB.length;j++){
-        if(!qMag[j]||!qMag[j+gap])continue;
-        const re=qR[j+gap]*qR[j]+qI[j+gap]*qI[j];
-        const im=qI[j+gap]*qR[j]-qR[j+gap]*qI[j];
-        const weight=Math.min(qMag[j],qMag[j+gap]);
-        ar+=re*weight;ai+=im*weight;w+=weight;
-      }
-      if(w===0)return {samples:0,quality:0};
-      return {samples:Math.atan2(ai,ar)*N/(2*Math.PI*4*gap),
-              quality:Math.hypot(ar,ai)/w};
-    }
-    // Use 4- and 8-pilot spans for high precision; resolve phase wraps with
-    // the coarse 1-pilot estimate (unambiguous over +/-128 samples).
-    const a=slopeAtGap(1),b=slopeAtGap(4),c=slopeAtGap(8);
-    function unwrapNear(value,period,reference){return value+Math.round((reference-value)/period)*period;}
-    const bb=unwrapNear(b.samples,64,a.samples);
-    const cc=unwrapNear(c.samples,32,bb);
-    let measured=cc;
-    if(c.quality<.50||Math.abs(cc-bb)>12)measured=bb;
-    if(b.quality<.50||Math.abs(bb-a.samples)>22)measured=a.samples;
-    pilotQuality=Math.min(a.quality,b.quality,c.quality);
-    timingResidual=measured;
-    // PLL: follow the signal instead of assuming nominal sample rate forever.
-    // Positive phase slope means FFT window starts too late, so move it earlier.
-    if(a.quality>.48){
-      const correction=Math.max(-5,Math.min(5,measured*.68));
-      timingAdjust-=correction;
-      lastCorrection=correction;
-    } else lastCorrection=0;
-  }
-  for(let i=0;i<DB.length;i++){
-    const k=DB[i],j=Math.min(PB.length-2,Math.floor((k-K0)/4));
-    const j2=j+1,t=(k-PB[j])/(PB[j2]-PB[j]);
-    // 82–84 to nośne za ostatnim pilotem (81): ekstrapoluj fazę,
-    // w przeciwnym razie dryf zegarów niszczy ostatnie trzy nośne.
-    const mag=Math.max(1e-8,hm[j]*(1-t)+hm[j2]*t);
-    const phase=hp[j]*(1-t)+hp[j2]*t;
-    const Hre=mag*Math.cos(phase),Him=mag*Math.sin(phase),den=mag*mag+1e-12;
-    const c=rotC[k],ss=rotS[k];
-    const Xre=rr[k]*c-ri[k]*ss,Xim=rr[k]*ss+ri[k]*c;
-    const zr=(Xre*Hre+Xim*Him)/den,zi=(Xim*Hre-Xre*Him)/den;
-    const p=s*PER+2*i;
-    if(p<NV)vals[p]=clamp(zr/2+.5);
-    if(p+1<NV)vals[p+1]=clamp(zi/2+.5);
-  }
-}
-function resetIdle(){st="IDLE";n=0;scanPos=0;bm=0;sym=0;receiving=false;}
-function rx(){
-  while(sym<NSYM){
-    const o=P0+sym*SYM+CP-WIN_EARLY+Math.round(timingAdjust);
-    if(o<0||o+N>n)return;
-    decodeSym(sym++);decodedCount=Math.min(NV,sym*PER);
-    if(sym%8===0)renderSmall();
-  }
-  decodedCount=NV;renderSmall();completed=true;$("save").disabled=false;
-  showUntil=performance.now()+120000;resetIdle();$("status").textContent="Odebrano obraz kolorowy (256 × 192).";
-}
-async function startListen(){
-  try{
-    const a=ctx();
-    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
-    const src=a.createMediaStreamSource(stream),proc=a.createScriptProcessor(4096,1,1);
-    const mute=a.createGain();mute.gain.value=0;
-    proc.onaudioprocess=e=>{
-      const x=e.inputBuffer.getChannelData(0);
-      if(n+x.length>buf.length)resetIdle();
-      buf.set(x,n);n+=x.length;
-      if(st==="IDLE")scan();else rx();
-    };
-    src.connect(proc);proc.connect(mute);mute.connect(a.destination);
-    listening=true;$("listen").disabled=true;$("listen").textContent="Nasłuch włączony";
-    if(a.sampleRate!==FS)$("status").textContent="Uwaga: dźwięk nie ma 48 kHz ("+a.sampleRate+").";
-  }catch(err){$("status").textContent="Nie można włączyć mikrofonu. Sprawdź uprawnienia / HTTPS: "+err.message;}
-}
-$("listen").onclick=startListen;
-$("save").onclick=()=>{
-  if(!completed)return;
-  const a=document.createElement("a");a.download="audiofax-odebrany-kolor.png";
-  a.href=small.toDataURL("image/png");a.click();
-};
-setInterval(()=>{
-  if(!listening)return;
-  if(st==="IDLE"&&completed){
-    $("syncinfo").textContent="Zakończono: korekcja "+timingAdjust.toFixed(1)+" próbek";
-    return;
-  }
-  $("status").textContent=st==="IDLE"?
-    "Nasłuch — korelacja z preambułą: "+live.toFixed(2):
-    "Odbiór kolorowego obrazu: "+Math.round(100*sym/NSYM)+"%";
-  if(st==="RX"){
-    const secs=Math.max(0.01,sym*SYM/FS);
-    const ppm=Math.round(-timingAdjust/(secs*FS)*1e6);
-    $("syncinfo").textContent="Korekcja zegara: "+timingAdjust.toFixed(1)+
-      " próbek | ~"+(ppm>=0?"+":"")+ppm+" ppm | jakość pilotów "+
-      Math.round(pilotQuality*100)+"% | błąd "+timingResidual.toFixed(2)+" próbek";
-  } else if(completed){
-    $("syncinfo").textContent="Zakończono: korekcja "+timingAdjust.toFixed(1)+" próbek";
-  }
-},250);
-// Nadajnik: RGB -> YCbCr 4:2:0. Próbki Y w pełnej rozdzielczości, Cb/Cr co 2x2.
-const pv=$("prev"),pg=pv.getContext("2d");
-let sourceImg=null,txVals=null,playing=null;
-function buildPayload(){
-  if(!sourceImg)return;
-  const r=Math.max(C.W/sourceImg.width,C.H/sourceImg.height);
-  const w=sourceImg.width*r,h=sourceImg.height*r;
-  pg.clearRect(0,0,C.W,C.H);pg.imageSmoothingEnabled=true;pg.imageSmoothingQuality="high";
-  pg.drawImage(sourceImg,(C.W-w)/2,(C.H-h)/2,w,h);
-  const img=pg.getImageData(0,0,C.W,C.H),data=img.data;
-  const yIn=new Float32Array(NPIX),cbIn=new Float32Array(NPIX),crIn=new Float32Array(NPIX);
-  for(let i=0;i<NPIX;i++){
-    const R=data[i*4]/255,G=data[i*4+1]/255,B=data[i*4+2]/255;
-    const Y=.299*R+.587*G+.114*B;
-    yIn[i]=Y;cbIn[i]=.5+(B-Y)/1.772;crIn[i]=.5+(R-Y)/1.402;
-  }
-  const sharpen=Number($("sharp").value)/100,sat=Number($("sat").value)/100;
-  const yNew=new Float32Array(NPIX);
-  for(let yy=0;yy<C.H;yy++)for(let xx=0;xx<C.W;xx++){
-    const p=yy*C.W+xx,x0=Math.max(0,xx-1),x1=Math.min(C.W-1,xx+1);
-    const y0=Math.max(0,yy-1),y1=Math.min(C.H-1,yy+1);
-    // delikatny filtr unsharp: zachowanie krawędzi liter i drobnych obiektów
-    const avg=(4*yIn[p]+yIn[yy*C.W+x0]+yIn[yy*C.W+x1]+yIn[y0*C.W+xx]+yIn[y1*C.W+xx])/8;
-    yNew[p]=clamp(yIn[p]+sharpen*(yIn[p]-avg));
-  }
-  txVals=new Float32Array(NV);
-  for(let by=0;by<BH;by++)for(let bx=0;bx<BW;bx++){
-    const x=bx*2,y=by*2,p=y*C.W+x,ix=(by*BW+bx)*6;
-    const pp=[p,p+1,p+C.W,p+C.W+1];
-    let cb=0,cr=0;
-    for(let i=0;i<4;i++){
-      const q=pp[i];txVals[ix+i]=yNew[q];cb+=cbIn[q];cr+=crIn[q];
-      const cy=(cbIn[q]-.5)*sat,cv=(crIn[q]-.5)*sat,Y=yNew[q];
-      data[q*4]=u8(Y+1.402*cv);
-      data[q*4+1]=u8(Y-.344136*cy-.714136*cv);
-      data[q*4+2]=u8(Y+1.772*cy);data[q*4+3]=255;
-    }
-    txVals[ix+4]=clamp(.5+(cb/4-.5)*sat);
-    txVals[ix+5]=clamp(.5+(cr/4-.5)*sat);
-  }
-  pg.putImageData(img,0,0);$("send").disabled=false;
-  $("txst").textContent="Gotowy obraz 256 × 192";
-}
-$("sharp").oninput=()=>{$("sharpv").textContent=$("sharp").value+"%";buildPayload();};
-$("sat").oninput=()=>{$("satv").textContent=$("sat").value+"%";buildPayload();};
-$("file").onchange=e=>{
-  const file=e.target.files[0];if(!file)return;
-  const url=URL.createObjectURL(file),img=new Image();
-  img.onload=()=>{sourceImg=img;buildPayload();URL.revokeObjectURL(url);};
-  img.onerror=()=>{$("txst").textContent="Nie udało się wczytać obrazu.";URL.revokeObjectURL(url);};
-  img.src=url;
-};
-function synth(){
-  const pay=new Float32Array(NSYM*SYM),re=new Float64Array(N),im=new Float64Array(N);
-  for(let s=0;s<NSYM;s++){
-    re.fill(0);im.fill(0);
-    for(const k of PB){re[k]=pil(k);re[N-k]=pil(k);}
-    DB.forEach((k,i)=>{
-      const p=s*PER+2*i,a=p<NV?(txVals[p]-.5)*2:0,b=p+1<NV?(txVals[p+1]-.5)*2:0;
-      re[k]=a;im[k]=b;re[N-k]=a;im[N-k]=-b;
+  const tone=(ms,f)=>segment(ms/1000,()=>f);
+  function scan(ms,arr,offset,count){
+    segment(ms/1000,(i,n)=>{
+      const pos=(i+.5)*count/n-.5;const left=Math.floor(pos),frac=clamp(pos-left,0,1);
+      const lo=arr[offset+clamp(left,0,count-1)];const hi=arr[offset+clamp(left+1,0,count-1)];
+      return 1500+(lo*(1-frac)+hi*frac)*(800/255);
     });
-    fft(re,im,true);
-    const o=s*SYM;
-    for(let i=0;i<N;i++)pay[o+CP+i]=re[i];
-    for(let i=0;i<CP;i++)pay[o+i]=re[N-CP+i];
   }
-  // Bez twardego obcinania pików: clipping wprowadza błędy jasności i kolorów.
-  let peak=1e-8;for(let i=0;i<pay.length;i++)peak=Math.max(peak,Math.abs(pay[i]));
-  const out=new Float32Array(Math.round(.3*FS)+2*CH+pay.length+Math.round(.3*FS));
-  const o0=Math.round(.3*FS),gain=.80/peak;
-  for(let i=0;i<CH;i++){out[o0+i]=chirp[i]*.85;out[o0+CH+i]=chirp[i]*.85;}
-  for(let i=0;i<pay.length;i++)out[o0+2*CH+i]=pay[i]*gain;
-  return out;
+  tone(300,1900);tone(10,1200);tone(300,1900);
+  tone(30,1200); // VIS start
+  for(let i=0;i<7;i++)tone(30,(VIS>>i)&1?1100:1300);
+  const parity=(VIS.toString(2).replace(/0/g,'').length&1);
+  tone(30,parity?1100:1300);tone(30,1200); // VIS stop
+  for(let row=0;row<H;row++){
+    tone(9,1200);tone(3,1500);scan(88,ch.y,row*W,W);
+    tone(4.5,row%2?2300:1500);tone(1.5,1900);
+    const cc=row%2?ch.cb:ch.cr;scan(44,cc,Math.floor(row/2)*PAIR,PAIR);
+  }
+  tone(120,1900);
+  const n=at,fade=Math.round(fs*.008);
+  for(let i=0;i<fade;i++){buf[i]*=i/fade;buf[n-1-i]*=i/fade;}
+  return buf.subarray(0,n);
 }
-$("send").onclick=()=>{
-  if(playing){playing.stop();return;}
-  if(!txVals)return;
-  const a=ctx(),data=synth(),ab=a.createBuffer(1,data.length,FS);
-  ab.copyToChannel(data,0);
-  const src=a.createBufferSource();src.buffer=ab;src.connect(a.destination);
-  const t0=a.currentTime+.1,dur=ab.duration;src.start(t0);playing=src;
-  $("send").textContent="Zatrzymaj";$("file").disabled=true;
-  $("sharp").disabled=true;$("sat").disabled=true;
-  const iv=setInterval(()=>{
-    const f=clamp((a.currentTime-t0)/dur);
-    $("prog").style.width=(f*100)+"%";
-    $("txst").textContent="Nadawanie "+(f*dur).toFixed(1)+" / "+dur.toFixed(1)+" s";
-  },100);
-  src.onended=()=>{
-    clearInterval(iv);playing=null;$("send").textContent="Nadaj";
-    $("file").disabled=false;$("sharp").disabled=false;$("sat").disabled=false;
-    $("prog").style.width="0";$("txst").textContent="Transmisja zakończona";
-  };
+function makeWav(pcm,fs){
+  const ab=new ArrayBuffer(44+2*pcm.length),d=new DataView(ab);
+  function string(off,s){for(let j=0;j<s.length;j++)d.setUint8(off+j,s.charCodeAt(j));}
+  string(0,'RIFF');d.setUint32(4,36+pcm.length*2,true);string(8,'WAVE');string(12,'fmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);d.setUint32(24,fs,true);d.setUint32(28,fs*2,true);d.setUint16(32,2,true);d.setUint16(34,16,true);string(36,'data');d.setUint32(40,pcm.length*2,true);
+  for(let i=0;i<pcm.length;i++)d.setInt16(44+i*2,Math.round(clamp(pcm[i],-1,1)*32767),true);
+  return new Blob([ab],{type:'audio/wav'});
+}
+function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),20000);}
+
+$('pickImage').addEventListener('change',async e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  try{
+    let bmp;
+    if('createImageBitmap' in window)bmp=await createImageBitmap(f);else bmp=await new Promise((resolve,reject)=>{const u=URL.createObjectURL(f),img=new Image();img.onload=()=>{URL.revokeObjectURL(u);resolve(img);};img.onerror=()=>{URL.revokeObjectURL(u);reject(Error('Nie udało się otworzyć obrazu'));};img.src=u;});
+    const scale=Math.max(W/bmp.width,H/bmp.height),dw=bmp.width*scale,dh=bmp.height*scale;
+    txg.fillStyle='#000';txg.fillRect(0,0,W,H);txg.drawImage(bmp,(W-dw)/2,(H-dh)/2,dw,dh);
+    bmp.close?.();sourceImage=f.name;encodedChannels=rgbaToChannels(txg.getImageData(0,0,W,H).data);
+    $('send').disabled=false;$('saveWav').disabled=false;$('testLoop').disabled=false;
+    nowMsg('txStatus',`Gotowe: ${f.name}\nRobot 36 • 320×240 • ok. 37 s`);
+  }catch(err){nowMsg('txStatus','Błąd obrazu: '+err.message);}
+});
+
+async function audio(){if(!audioCtx||audioCtx.state==='closed')audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:FS_DEFAULT});if(audioCtx.state==='suspended')await audioCtx.resume();return audioCtx;}
+function stopTx(){if(txSource){try{txSource.stop();}catch{}txSource.disconnect();txSource=null;}if(txGain){txGain.disconnect();txGain=null;}clearInterval(txTimer);txTimer=0;$('send').disabled=!encodedChannels;$('stopSend').disabled=true;$('sendProgress').style.width='0%';}
+$('volume').oninput=()=>{$('volTxt').textContent=$('volume').value+'%';if(txGain)txGain.gain.value=Number($('volume').value)/100;};
+$('send').onclick=async()=>{
+  if(!encodedChannels)return;try{
+    const a=await audio(),data=makeRobot36(encodedChannels,a.sampleRate),ab=a.createBuffer(1,data.length,a.sampleRate);ab.copyToChannel(data,0);
+    stopTx();txGain=a.createGain();txGain.gain.value=Number($('volume').value)/100;
+    txSource=a.createBufferSource();txSource.buffer=ab;txSource.connect(txGain);txGain.connect(a.destination);
+    const source=txSource,start=a.currentTime+.15;source.start(start);$('send').disabled=true;$('stopSend').disabled=false;
+    txTimer=setInterval(()=>{const elapsed=clamp(a.currentTime-start,0,ab.duration);$('sendProgress').style.width=100*elapsed/ab.duration+'%';nowMsg('txStatus',`Trwa nadawanie Robot 36...\n${elapsed.toFixed(1)} / ${ab.duration.toFixed(1)} s`);},150);
+    source.onended=()=>{if(txSource!==source)return;stopTx();nowMsg('txStatus','Nadawanie zakończone. Możesz wysłać obraz ponownie.');};
+  }catch(e){stopTx();nowMsg('txStatus','Nie udało się odtworzyć dźwięku: '+e.message);}
 };
-</script>
-</body>
-</html>
+$('stopSend').onclick=()=>{stopTx();nowMsg('txStatus','Nadawanie zatrzymane.');};
+$('saveWav').onclick=()=>{if(!encodedChannels)return;nowMsg('txStatus','Generuję standardowy plik WAV Robot 36…');setTimeout(()=>{try{downloadBlob(makeWav(makeRobot36(encodedChannels,FS_DEFAULT),FS_DEFAULT),'Audiofax_Robot36.wav');nowMsg('txStatus','Zapisano sygnał WAV. Można odtworzyć na drugim urządzeniu.');}catch(e){nowMsg('txStatus','Błąd WAV: '+e.message);}},30);};
+
+// Demodulator FM: przemiana do pasma podstawowego przy 1900 Hz, dwustopniowe LPF, różnica fazy.
+// Pracuje niezależnie od częstotliwości próbkowania wybranej przez przeglądarkę.
+class Robot36Decoder{
+  constructor(fs,onRow,onInfo,onDone){
+    this.fs=fs;this.rate=fs/Math.max(1,Math.round(fs/24000));this.decim=Math.max(1,Math.round(fs/24000));
+    this.onRow=onRow;this.onInfo=onInfo;this.onDone=onDone;
+    this.ring=new Float32Array(Math.ceil(this.rate*2.5));this.max=this.ring.length;
+    this.num=0;this.count=0;this.oscC=1;this.oscS=0;
+    const a=TWO_PI*1900/fs;this.rotC=Math.cos(a);this.rotS=Math.sin(a);
+    this.alpha=1-Math.exp(-1/(fs*.00021));this.beta=1-Math.exp(-1/(fs*.00024));
+    this.i1=0;this.q1=0;this.i2=0;this.q2=0;this.prevI=0;this.prevQ=0;this.fSmooth=1900;
+    this.syncRun=-1;this.lastSyncCandidate=-1;this.frameStart=0;this.currentRow=0;this.active=false;
+    this.synced=new Map();this.rowsY=new Float32Array(W*H);this.chromaR=new Float32Array(PAIR*(H/2));this.chromaB=new Float32Array(PAIR*(H/2));
+    this.freq=0;this.syncCount=0;this.detectedVIS=false;
+  }
+  get(i){i=Math.round(i);if(i<0||i>=this.num||this.num-i>=this.max)return NaN;return this.ring[i%this.max];}
+  mean(i,half=1){i=Math.round(i);let sum=0,n=0;for(let a=-half;a<=half;a++){const f=this.get(i+a);if(Number.isFinite(f)){sum+=f;n++;}}return n?sum/n:NaN;}
+  sampleTone(msIndex){return this.mean(msIndex,2);}
+  checkVis(runStart){
+    // VIS 8, LSB first. 30 ms per bit: 7 danych + parzystość parzysta.
+    let bits=0;
+    for(let b=0;b<8;b++){
+      const f=this.mean(runStart-(8-b-.5)*.030*this.rate,4);
+      if(!Number.isFinite(f)||f<1000||f>1400)return false;
+      if(f<1200)bits|=(1<<b);
+    }
+    return (bits&127)===VIS&&((bits>>7)&1)===1;
+  }
+  addSync(start,end){
+    const dur=(end-start)/this.rate;
+    if(!this.active){
+      if(dur>.033&&dur<.047){
+        if(!this.checkVis(start))return;
+        this.detectedVIS=true;this.frameStart=start+.030*this.rate-.00035*this.rate;
+        this.active=true;this.currentRow=0;this.synced.clear();this.synced.set(0,this.frameStart);this.syncCount=1;
+        this.rowsY.fill(0);this.chromaR.fill(128);this.chromaB.fill(128);
+        this.onInfo('Odebrano VIS 8. Rozpoczynam obraz Robot 36...');
+      }
+      return;
+    }
+    if(dur<.005||dur>.016)return;
+    const corrected=start-.00035*this.rate;
+    const guess=Math.round((corrected-this.frameStart)/(.150*this.rate));
+    if(guess<1||guess>=H)return;
+    const expected=this.frameStart+guess*.150*this.rate;
+    // Liniowy błąd zegara oraz echo: aktualizujemy początek linii wyłącznie w pobliżu spodziewanego sync.
+    if(Math.abs(corrected-expected)<.014*this.rate){this.synced.set(guess,corrected);this.syncCount++;}
+  }
+  gotFreq(f){
+    const id=this.num++;this.ring[id%this.max]=f;
+    const isSync=Number.isFinite(f)&&f>=1080&&f<=1370;
+    if(isSync){if(this.syncRun<0)this.syncRun=id;}
+    else if(this.syncRun>=0){this.addSync(this.syncRun,id);this.syncRun=-1;}
+    if((id&255)===0){this.freq=Number.isFinite(f)?Math.round(f):0;}
+    if(this.active)this.processRows();
+  }
+  process(pcm){
+    for(let j=0;j<pcm.length;j++){
+      const s=pcm[j];
+      const inI=s*this.oscC,inQ=-s*this.oscS;
+      const cc=this.oscC*this.rotC-this.oscS*this.rotS,ss=this.oscC*this.rotS+this.oscS*this.rotC;
+      this.oscC=cc;this.oscS=ss;
+      const ia=this.alpha;
+      this.i1+=ia*(inI-this.i1);this.q1+=ia*(inQ-this.q1);
+      this.i2+=ia*(this.i1-this.i2);this.q2+=ia*(this.q1-this.q2);
+      let f=NaN;
+      if(this.count>300&&this.i2*this.i2+this.q2*this.q2>0.000002){
+        const cross=this.prevI*this.q2-this.prevQ*this.i2,dot=this.prevI*this.i2+this.prevQ*this.q2;
+        f=1900+Math.atan2(cross,dot)*this.fs/TWO_PI;
+        if(f>650&&f<2700){this.fSmooth+=this.beta*(f-this.fSmooth);f=this.fSmooth;}else f=NaN;
+      }
+      this.prevI=this.i2;this.prevQ=this.q2;
+      if((this.count%this.decim)===0)this.gotFreq(f);
+      this.count++;
+      if((this.count&4095)===0){const r=Math.hypot(this.oscC,this.oscS);if(r>0){this.oscC/=r;this.oscS/=r;}}
+    }
+  }
+  processRows(){
+    while(this.active&&this.currentRow<H){
+      const row=this.currentRow,st=this.synced.get(row)??(this.frameStart+row*.150*this.rate);
+      if(this.num<st+(.150+.011)*this.rate)break;
+      const ybase=row*W,cbase=Math.floor(row/2)*PAIR;
+      for(let x=0;x<W;x++){
+        const p=st+(.012+((x+.5)/W)*.088+.00035)*this.rate;
+        const f=this.sampleTone(p);this.rowsY[ybase+x]=Number.isFinite(f)?clamp((f-1500)*255/800):16;
+      }
+      for(let x=0;x<PAIR;x++){
+        const p=st+(.106+((x+.5)/PAIR)*.044+.00035)*this.rate;
+        const f=this.sampleTone(p),v=Number.isFinite(f)?clamp((f-1500)*255/800):128;
+        if(row%2===0)this.chromaR[cbase+x]=v;else this.chromaB[cbase+x]=v;
+      }
+      const pair=row>>1;
+      this.onRow(row,this.renderPair(pair),this.syncCount);
+      this.currentRow++;
+      if(this.currentRow===H){this.active=false;this.onDone();}
+    }
+  }
+  renderPair(pair){
+    const img=new Uint8ClampedArray(2*W*4);
+    for(let dy=0;dy<2;dy++)for(let x=0;x<W;x++){
+      const y=this.rowsY[(pair*2+dy)*W+x],c=pair*PAIR+(x>>1);
+      const cr=this.chromaR[c]-128,cb=this.chromaB[c]-128;
+      const k=(dy*W+x)*4,j=1.164*(y-16);
+      img[k]=clamp(j+1.596*cr);img[k+1]=clamp(j-.392*cb-.813*cr);img[k+2]=clamp(j+2.017*cb);img[k+3]=255;
+    }
+    return img;
+  }
+}
+
+let rxRows=0;
+function resetRxCanvas(){rxg.fillStyle='#080f18';rxg.fillRect(0,0,W,H);rxRows=0;rxLastFrame=false;$('savePng').disabled=true;$('recvProgress').style.width='0%';}
+function createDecoder(fs){resetRxCanvas();const tmp=document.createElement('canvas');tmp.width=W;tmp.height=2;const tmpg=tmp.getContext('2d');
+  return new Robot36Decoder(fs,(row,pix,nSync)=>{
+    tmpg.putImageData(new ImageData(new Uint8ClampedArray(pix),W,2),0,0);
+    rxg.drawImage(tmp,0,(row>>1)*2);rxRows=row+1;
+    $('recvProgress').style.width=100*rxRows/H+'%';$('syncTxt').textContent='Synchronizacja: '+nSync+' / 240';
+    if(row%4===0)nowMsg('rxStatus',`Robot 36 · odbieranie ${Math.round(100*rxRows/H)}%\nLinia ${rxRows}/240 · sync wykryte: ${nSync}`);
+  },txt=>nowMsg('rxStatus',txt),()=>{rxLastFrame=true;$('savePng').disabled=false;$('recvProgress').style.width='100%';nowMsg('rxStatus',`Odbiór zakończony · 320×240 · linie: ${rxRows}/240.\nMożesz zapisać wynik jako PNG.`);});
+}
+async function startMic(){
+  try{
+    if(!navigator.mediaDevices?.getUserMedia)throw Error('Dostęp do mikrofonu wymaga HTTPS/localhost lub pliku lokalnego.');
+    const a=await audio();micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+    rxDecoder=createDecoder(a.sampleRate);
+    micSource=a.createMediaStreamSource(micStream);micNode=a.createScriptProcessor(2048,1,1);silenceNode=a.createGain();silenceNode.gain.value=0;
+    micNode.onaudioprocess=e=>{if(rxDecoder)rxDecoder.process(e.inputBuffer.getChannelData(0));};
+    micSource.connect(micNode);micNode.connect(silenceNode);silenceNode.connect(a.destination);
+    liveListening=true;$('listen').disabled=true;$('stopListen').disabled=false;
+    nowMsg('rxStatus','Nasłuch aktywny · oczekuję na nagłówek VIS 8.\nWłącz nadajnik dopiero teraz.');
+  }catch(e){stopMic();nowMsg('rxStatus','Mikrofon: '+e.message);}
+}
+function stopMic(){liveListening=false;micNode?.disconnect();micSource?.disconnect();silenceNode?.disconnect();micStream?.getTracks().forEach(t=>t.stop());micNode=null;micSource=null;silenceNode=null;micStream=null;rxDecoder=null;$('listen').disabled=false;$('stopListen').disabled=true;}
+$('listen').onclick=startMic;$('stopListen').onclick=()=>{stopMic();nowMsg('rxStatus','Nasłuch zatrzymany.');};
+setInterval(()=>{if(liveListening&&rxDecoder){$('freqTxt').textContent=`Ton: ${rxDecoder.freq||'—'} Hz`;if(!rxDecoder.active&&rxRows===0&&rxDecoder.num>rxDecoder.rate*2)nowMsg('rxStatus','Nasłuch aktywny · czekam na VIS 8 (Robot 36).');}},500);
+$('savePng').onclick=()=>{if(!rxLastFrame)return;rxCanvas.toBlob(blob=>{if(blob)downloadBlob(blob,'Audiofax_Robot36_odebrany.png');},'image/png');};
+
+function readWavBuffer(buf){
+  const d=new DataView(buf);if(d.byteLength<44)throw Error('Za krótki plik WAV');
+  const str=(o,n)=>Array.from({length:n},(_,i)=>String.fromCharCode(d.getUint8(o+i))).join('');
+  if(str(0,4)!=='RIFF'||str(8,4)!=='WAVE')throw Error('Wymagany WAV RIFF PCM');
+  let ch=0,fs=0,bits=0,fmt=0,off=0,nBytes=0;
+  for(let pos=12;pos+8<=d.byteLength;){const id=str(pos,4),size=d.getUint32(pos+4,true),a=pos+8;
+    if(a+size>d.byteLength)throw Error('Niepełny blok WAV');
+    if(id==='fmt '){fmt=d.getUint16(a,true);ch=d.getUint16(a+2,true);fs=d.getUint32(a+4,true);bits=d.getUint16(a+14,true);}
+    if(id==='data'){off=a;nBytes=size;break;}
+    pos=a+size+(size%2);
+  }
+  if(!off||!fs||ch<1||ch>2||![1,3].includes(fmt)||![16,32].includes(bits))throw Error('Obsługiwane: mono/stereo WAV PCM16 lub float32');
+  if(fmt===3&&bits!==32)throw Error('Format float WAV wymaga 32 bitów');
+  const bytes=bits/8,frames=Math.floor(nBytes/(ch*bytes)),pcm=new Float32Array(frames);
+  for(let i=0;i<frames;i++){let v=0;for(let c=0;c<ch;c++){const p=off+(i*ch+c)*bytes;v+=fmt===3?d.getFloat32(p,true):(bits===16?d.getInt16(p,true)/32768:d.getInt32(p,true)/2147483648);}pcm[i]=v/ch;}
+  return {pcm,fs};
+}
+async function decodeOffline(pcm,fs){
+  if(liveListening){stopMic();}
+  abortJob=false;$('abortDecode').disabled=false;$('pickWav').disabled=true;$('testLoop').disabled=true;
+  rxDecoder=createDecoder(fs);nowMsg('rxStatus','Dekodowanie SSTV z pliku…');
+  try{
+    const block=Math.max(4096,Math.round(fs*.25));
+    for(let pos=0;pos<pcm.length;pos+=block){
+      if(abortJob)throw Error('Przerwano dekodowanie');
+      rxDecoder.process(pcm.subarray(pos,Math.min(pos+block,pcm.length)));
+      if((pos/block)%4===0)await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    if(!rxLastFrame)nowMsg('rxStatus',`Nie udało się odebrać całego obrazu. Wykryto ${rxRows}/240 linii.\nSprawdź, czy plik zawiera pełny Robot 36 z nagłówkiem VIS 8.`);
+  }catch(e){nowMsg('rxStatus','Dekodowanie: '+e.message);}
+  finally{rxDecoder=null;$('abortDecode').disabled=true;$('pickWav').disabled=false;$('testLoop').disabled=!encodedChannels;}
+}
+$('abortDecode').onclick=()=>{abortJob=true;};
+$('pickWav').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const wav=readWavBuffer(await f.arrayBuffer());await decodeOffline(wav.pcm,wav.fs);}catch(e){nowMsg('rxStatus','Plik WAV: '+e.message);}e.target.value='';};
+$('testLoop').onclick=async()=>{if(!encodedChannels)return;await decodeOffline(makeRobot36(encodedChannels,FS_DEFAULT),FS_DEFAULT);};
+// Test hooks: czysta synteza i demodulator (bez dostępu do mikrofonu).
+window.__sstvTest={rgbaToChannels,makeRobot36,Robot36Decoder,readWavBuffer,makeWav};
+</script></body></html>
