@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Audiofax — kolor 256×192</title>
+<title>Audiofax — kolor 256×192 — synchronizacja v2</title>
 <style>
 :root{--bg:#eceef3;--fg:#1c2030;--dim:#5d6478;--line:#c9cdd8;--acc:#2f5bd8;--panel:#f7f8fb;color-scheme:light;box-sizing:border-box}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2030;--fg:#e6e8f0;--dim:#a9b0c4;--line:#343a50;--acc:#8fb0ff;--panel:#232840;color-scheme:dark}}
@@ -25,13 +25,14 @@ input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
 </head>
 <body>
 <main>
-<h1>Audiofax <span style="font-weight:400">— kolor 256×192</span></h1>
-<p class="lead">Kolorowy obraz przez dźwięk, bez Wi‑Fi i bez internetu. Analogowy OFDM z synchronizacją i pilotami.</p>
+<h1>Audiofax <span style="font-weight:400">— kolor 256×192 SYNC</span></h1>
+<p class="lead">Kolorowy obraz przez dźwięk, bez Wi‑Fi i bez internetu. Analogowy OFDM z ciągłą korekcją dryfu zegarów audio.</p>
 <section>
 <h2>Odbiornik</h2>
 <canvas id="screen" width="256" height="192"></canvas>
 <div class="row"><button id="listen">Włącz nasłuch</button><button id="save" class="ghost" disabled>Zapisz odebrany PNG</button></div>
 <div class="st" id="status">Nasłuch wyłączony</div>
+<div class="st" id="syncinfo">Synchronizacja: oczekiwanie</div>
 </section>
 <section>
 <h2>Nadajnik</h2>
@@ -47,7 +48,7 @@ input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
 <div class="bar"><i id="prog"></i></div>
 <p class="cap">Format: 256 × 192 piksele, kolor YCbCr 4:2:0 (4 próbki jasności + 2 chrominancji na blok 2 × 2). Czas transmisji ok. 20 s.</p>
 </section>
-<p class="hint">Na obu urządzeniach otwórz tę samą wersję pliku. Mikrofon musi mieć wyłączone tłumienie szumu i redukcję echa. Ustaw głośność na ok. 60–70%, odległość 0,5–1 m; unikaj pogłosu. Przez mikrofon transmisja jest podatna na zakłócenia.</p>
+<p class="hint">Na odbiorniku koniecznie użyj wersji SYNC; nadajnik może pozostać ze starszej wersji kolorowej. Mikrofon musi mieć wyłączone tłumienie szumu i redukcję echa. Ustaw głośność na ok. 60–70%, odległość 0,5–1 m; unikaj pogłosu. Przez mikrofon transmisja jest podatna na zakłócenia.</p>
 </main>
 <script>
 "use strict";
@@ -139,10 +140,15 @@ function frame(){
 }
 requestAnimationFrame(frame);
 // Wykrywanie dwóch identycznych chirpów, dopasowanie początku i dekodowanie symboli.
-// 30 s wystarcza na przesyłkę (~19,3 s) z bezpiecznym zapasem.
-const buf=new Float32Array(FS*30);
+// 60 s bufora obsługuje także wolniejsze urządzenia i dryf zegarów.
+const buf=new Float32Array(FS*60);
 let n=0,scanPos=0,st="IDLE",P0=0,sym=0,bm=0,bd=0,live=0,listening=false;
 let decodedCount=0;
+// Tracking error of sampling clocks: reference channel response is from symbol 0.
+// A fixed FFT start over ~20s can drift outside the cyclic prefix even at ~200ppm.
+let timingAdjust=0, timingResidual=0, pilotQuality=0, lastCorrection=0;
+const refPr=new Float64Array(PB.length),refPi=new Float64Array(PB.length);
+let pilotReferenceReady=false;
 function ncorr(pos){
   let p=0,e1=0,e2=0;
   for(let i=0;i<CH;i++){
@@ -163,6 +169,8 @@ function lock(c){
   let ec=0;for(let i=0;i<CH;i++)ec+=chirp[i]*chirp[i];
   if(best/Math.sqrt(ew*ec+1e-12)<.50)return false;
   P0=bo+2*CH;sym=0;decodedCount=0;vals.fill(.5);
+  timingAdjust=0;timingResidual=0;pilotQuality=0;lastCorrection=0;
+  pilotReferenceReady=false;
   st="RX";receiving=true;completed=false;lines=0;$("save").disabled=true;
   return true;
 }
@@ -182,7 +190,7 @@ const rr=new Float64Array(N),ri=new Float64Array(N);
 const hr=new Float64Array(PB.length),hi=new Float64Array(PB.length);
 const hm=new Float64Array(PB.length),hp=new Float64Array(PB.length);
 function decodeSym(s){
-  const o=P0+s*SYM+CP-WIN_EARLY;
+  const o=P0+s*SYM+CP-WIN_EARLY+Math.round(timingAdjust);
   for(let i=0;i<N;i++){rr[i]=buf[o+i];ri[i]=0;}
   fft(rr,ri,false);
   for(let j=0;j<PB.length;j++){
@@ -194,6 +202,54 @@ function decodeSym(s){
     if(j){while(a-hp[j-1]>Math.PI)a-=2*Math.PI;
           while(a-hp[j-1]<-Math.PI)a+=2*Math.PI;}
     hp[j]=a;
+  }
+  // Estimate the *residual* timing error from channel-invariant differential pilots.
+  // For each pilot, H_current * conj(H_first) removes static room/speaker response.
+  // Adjacent differences then remove common phase/CFO, leaving a phase slope
+  // proportional to the difference in FFT-window start (samples).
+  if(!pilotReferenceReady){
+    for(let j=0;j<PB.length;j++){refPr[j]=hr[j];refPi[j]=hi[j];}
+    pilotReferenceReady=true;
+  } else {
+    const qR=new Float64Array(PB.length),qI=new Float64Array(PB.length);
+    const qMag=new Float64Array(PB.length);
+    for(let j=0;j<PB.length;j++){
+      const r=hr[j]*refPr[j]+hi[j]*refPi[j];
+      const im=hi[j]*refPr[j]-hr[j]*refPi[j];
+      const m=Math.hypot(r,im);
+      if(m>1e-10){qR[j]=r/m;qI[j]=im/m;qMag[j]=m;}
+    }
+    function slopeAtGap(gap){
+      let ar=0,ai=0,w=0;
+      for(let j=0;j+gap<PB.length;j++){
+        if(!qMag[j]||!qMag[j+gap])continue;
+        const re=qR[j+gap]*qR[j]+qI[j+gap]*qI[j];
+        const im=qI[j+gap]*qR[j]-qR[j+gap]*qI[j];
+        const weight=Math.min(qMag[j],qMag[j+gap]);
+        ar+=re*weight;ai+=im*weight;w+=weight;
+      }
+      if(w===0)return {samples:0,quality:0};
+      return {samples:Math.atan2(ai,ar)*N/(2*Math.PI*4*gap),
+              quality:Math.hypot(ar,ai)/w};
+    }
+    // Use 4- and 8-pilot spans for high precision; resolve phase wraps with
+    // the coarse 1-pilot estimate (unambiguous over +/-128 samples).
+    const a=slopeAtGap(1),b=slopeAtGap(4),c=slopeAtGap(8);
+    function unwrapNear(value,period,reference){return value+Math.round((reference-value)/period)*period;}
+    const bb=unwrapNear(b.samples,64,a.samples);
+    const cc=unwrapNear(c.samples,32,bb);
+    let measured=cc;
+    if(c.quality<.50||Math.abs(cc-bb)>12)measured=bb;
+    if(b.quality<.50||Math.abs(bb-a.samples)>22)measured=a.samples;
+    pilotQuality=Math.min(a.quality,b.quality,c.quality);
+    timingResidual=measured;
+    // PLL: follow the signal instead of assuming nominal sample rate forever.
+    // Positive phase slope means FFT window starts too late, so move it earlier.
+    if(a.quality>.48){
+      const correction=Math.max(-5,Math.min(5,measured*.68));
+      timingAdjust-=correction;
+      lastCorrection=correction;
+    } else lastCorrection=0;
   }
   for(let i=0;i<DB.length;i++){
     const k=DB[i],j=Math.min(PB.length-2,Math.floor((k-K0)/4));
@@ -214,7 +270,7 @@ function decodeSym(s){
 function resetIdle(){st="IDLE";n=0;scanPos=0;bm=0;sym=0;receiving=false;}
 function rx(){
   while(sym<NSYM){
-    const o=P0+sym*SYM+CP-WIN_EARLY;
+    const o=P0+sym*SYM+CP-WIN_EARLY+Math.round(timingAdjust);
     if(o<0||o+N>n)return;
     decodeSym(sym++);decodedCount=Math.min(NV,sym*PER);
     if(sym%8===0)renderSmall();
@@ -246,10 +302,23 @@ $("save").onclick=()=>{
   a.href=small.toDataURL("image/png");a.click();
 };
 setInterval(()=>{
-  if(!listening||st==="IDLE"&&completed)return;
+  if(!listening)return;
+  if(st==="IDLE"&&completed){
+    $("syncinfo").textContent="Zakończono: korekcja "+timingAdjust.toFixed(1)+" próbek";
+    return;
+  }
   $("status").textContent=st==="IDLE"?
     "Nasłuch — korelacja z preambułą: "+live.toFixed(2):
     "Odbiór kolorowego obrazu: "+Math.round(100*sym/NSYM)+"%";
+  if(st==="RX"){
+    const secs=Math.max(0.01,sym*SYM/FS);
+    const ppm=Math.round(-timingAdjust/(secs*FS)*1e6);
+    $("syncinfo").textContent="Korekcja zegara: "+timingAdjust.toFixed(1)+
+      " próbek | ~"+(ppm>=0?"+":"")+ppm+" ppm | jakość pilotów "+
+      Math.round(pilotQuality*100)+"% | błąd "+timingResidual.toFixed(2)+" próbek";
+  } else if(completed){
+    $("syncinfo").textContent="Zakończono: korekcja "+timingAdjust.toFixed(1)+" próbek";
+  }
 },250);
 // Nadajnik: RGB -> YCbCr 4:2:0. Próbki Y w pełnej rozdzielczości, Cb/Cr co 2x2.
 const pv=$("prev"),pg=pv.getContext("2d");
